@@ -257,7 +257,8 @@ defmodule TradingIndicators.UtilsTest do
   describe "property-based testing" do
     test "mean is always between min and max values" do
       # Generate random data for property testing
-      data = DataGenerator.sample_prices(100)
+      ohlcv_data = DataGenerator.sample_prices(100)
+      data = Utils.extract_closes(ohlcv_data)  # Extract closing prices
       mean_val = Utils.mean(data)
 
       min_val = Enum.min(data, Decimal)
@@ -270,7 +271,8 @@ defmodule TradingIndicators.UtilsTest do
     test "standard deviation is always non-negative" do
       # Test with various data sets
       for _i <- 1..10 do
-        data = DataGenerator.sample_prices(50)
+        ohlcv_data = DataGenerator.sample_prices(50)
+        data = Utils.extract_closes(ohlcv_data)  # Extract closing prices
         std_dev = Utils.standard_deviation(data)
 
         assert Decimal.compare(std_dev, Decimal.new("0.0")) != :lt

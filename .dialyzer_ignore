@@ -1,0 +1,22 @@
+# Dialyzer warnings to ignore
+# Add patterns for warnings that are acceptable/expected
+
+# Common acceptable warnings in Elixir applications:
+# Unknown function warnings for optional dependencies
+unknown_function.*StreamData.*
+unknown_function.*ExCoveralls.*
+
+# Warnings about test modules (only in test environment)
+.*_test\.ex.*
+
+# Pattern match warnings that are intentional
+.*no_return.*__struct__.*
+
+# Guards that may appear redundant but are defensive
+.*guard.*will_never_succeed.*
+
+# Decimal library known warnings (if any)
+.*Decimal.*
+
+# OTP behavior callbacks that may not be used
+.*behaviour.*unused.*

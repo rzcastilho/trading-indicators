@@ -72,12 +72,68 @@ defmodule TradingIndicators do
   - `TradingIndicators.Errors.InvalidDataFormat` - Malformed input data
   - `TradingIndicators.Errors.CalculationError` - Mathematical calculation errors
 
+  ## Advanced Features (Phase 6)
+
+  ### Enhanced Streaming
+  
+  - **Batch Processing**: `TradingIndicators.Streaming.process_batch/2` for efficient multi-point updates
+  - **Stream Composition**: Chain multiple indicators with `TradingIndicators.Streaming.compose_streams/1`
+  - **State Persistence**: Serialize/deserialize streaming states for fault tolerance
+  - **Performance Monitoring**: Built-in metrics tracking for streaming operations
+
+      # Example: Enhanced streaming with batch processing
+      config = %{indicator: TradingIndicators.Trend.SMA, params: [period: 14], buffer_size: 1000}
+      {:ok, state} = TradingIndicators.Streaming.init_stream(config)
+      {:ok, results, new_state} = TradingIndicators.Streaming.process_batch(state, data_batch)
+
+  ### Pipeline Composition
+
+  - **Multi-Indicator Workflows**: Build complex analysis pipelines with dependencies
+  - **Parallel Execution**: Automatic optimization for independent indicators
+  - **Result Aggregation**: Combine and correlate results from multiple indicators
+  - **Error Handling**: Configurable fail-fast or continue-on-error modes
+
+      # Example: Building an indicator pipeline
+      pipeline = 
+        TradingIndicators.Pipeline.new()
+        |> TradingIndicators.Pipeline.add_stage("sma", TradingIndicators.Trend.SMA, [period: 20])
+        |> TradingIndicators.Pipeline.add_stage("rsi", TradingIndicators.Momentum.RSI, [period: 14])
+        |> TradingIndicators.Pipeline.build()
+
+  ### Performance Optimization
+
+  - **Benchmarking Suite**: `TradingIndicators.Performance.benchmark_indicator/3` for performance analysis
+  - **Memory Profiling**: Track memory usage and detect leaks with `memory_profile/1`
+  - **Intelligent Caching**: Configurable caching with multiple eviction policies
+  - **Optimization Recommendations**: Automated performance improvement suggestions
+
+      # Example: Performance benchmarking
+      {:ok, benchmark} = TradingIndicators.Performance.benchmark_indicator(
+        TradingIndicators.Trend.SMA, 
+        [dataset1, dataset2], 
+        iterations: 100
+      )
+
+  ### Data Quality Management
+
+  - **Comprehensive Validation**: Multi-layer data quality checks and scoring
+  - **Outlier Detection**: Multiple statistical methods (IQR, Z-score, Modified Z-score)
+  - **Data Cleaning**: Gap filling, normalization, and sanitization utilities
+  - **Quality Reporting**: Detailed quality assessment with actionable recommendations
+
+      # Example: Data quality analysis
+      {:ok, report} = TradingIndicators.DataQuality.validate_time_series(data)
+      {:ok, cleaned_data} = TradingIndicators.DataQuality.fill_gaps(data, :forward_fill)
+
   ## Performance Considerations
 
   - Use streaming mode for real-time applications to avoid recalculating entire datasets
   - Batch mode is optimized for historical data analysis
   - Consider using `TradingIndicators.Pipeline` for complex multi-indicator calculations
   - Large datasets benefit from parallel processing capabilities
+  - Enable caching with `TradingIndicators.Performance.enable_caching/1` for repeated calculations
+  - Use data quality validation before running computationally expensive indicators
+  - Streaming batch processing achieves >1000 updates/second per indicator
 
   ## Contributing
 

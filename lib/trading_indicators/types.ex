@@ -299,6 +299,168 @@ defmodule TradingIndicators.Types do
 
   def valid_indicator_result?(_), do: false
 
+  @typedoc """
+  Streaming state configuration for indicators.
+  
+  Contains configuration and state information for streaming indicators
+  including buffer management and composition settings.
+  """
+  @type streaming_config :: %{
+          indicator: module(),
+          params: keyword(),
+          buffer_size: pos_integer(),
+          state: term()
+        }
+
+  @typedoc """
+  Batch processing result containing multiple indicator values.
+  
+  Used for efficient processing of multiple data points at once
+  in streaming scenarios.
+  """
+  @type batch_result :: %{
+          values: [indicator_result()],
+          updated_state: term(),
+          processing_time: non_neg_integer()
+        }
+
+  @typedoc """
+  Pipeline configuration defining a sequence of indicators.
+  
+  Describes how indicators should be chained together, including
+  dependencies and data flow between stages.
+  """
+  @type pipeline_config :: %{
+          id: String.t(),
+          stages: [pipeline_stage()],
+          execution_mode: :sequential | :parallel,
+          error_handling: :fail_fast | :continue_on_error
+        }
+
+  @typedoc """
+  Individual pipeline stage configuration.
+  """
+  @type pipeline_stage :: %{
+          id: String.t(),
+          indicator: module(),
+          params: keyword(),
+          dependencies: [String.t()],
+          input_mapping: keyword()
+        }
+
+  @typedoc """
+  Pipeline execution state tracking all stages.
+  """
+  @type pipeline_state :: %{
+          config: pipeline_config(),
+          stage_states: %{String.t() => term()},
+          results_cache: %{String.t() => [indicator_result()]},
+          metrics: pipeline_metrics()
+        }
+
+  @typedoc """
+  Pipeline execution metrics for performance monitoring.
+  """
+  @type pipeline_metrics :: %{
+          total_executions: non_neg_integer(),
+          total_processing_time: non_neg_integer(),
+          stage_metrics: %{String.t() => stage_metrics()},
+          error_count: non_neg_integer(),
+          last_execution_time: non_neg_integer()
+        }
+
+  @typedoc """
+  Individual stage execution metrics.
+  """
+  @type stage_metrics :: %{
+          executions: non_neg_integer(),
+          total_time: non_neg_integer(),
+          average_time: float(),
+          error_count: non_neg_integer()
+        }
+
+  @typedoc """
+  Performance benchmark result for indicator analysis.
+  """
+  @type benchmark_result :: %{
+          indicator: module(),
+          dataset_size: pos_integer(),
+          iterations: pos_integer(),
+          total_time: non_neg_integer(),
+          average_time: float(),
+          memory_usage: non_neg_integer(),
+          throughput: float()
+        }
+
+  @typedoc """
+  Memory profiling information for performance analysis.
+  """
+  @type memory_profile :: %{
+          initial_memory: non_neg_integer(),
+          peak_memory: non_neg_integer(),
+          final_memory: non_neg_integer(),
+          memory_delta: integer(),
+          gc_collections: non_neg_integer()
+        }
+
+  @typedoc """
+  Data quality assessment result.
+  
+  Contains information about data integrity, completeness,
+  and quality metrics for time series data.
+  """
+  @type quality_report :: %{
+          total_points: non_neg_integer(),
+          valid_points: non_neg_integer(),
+          invalid_points: non_neg_integer(),
+          missing_timestamps: non_neg_integer(),
+          duplicate_timestamps: non_neg_integer(),
+          chronological_errors: non_neg_integer(),
+          outliers_detected: non_neg_integer(),
+          quality_score: float(),
+          issues: [quality_issue()]
+        }
+
+  @typedoc """
+  Individual data quality issue.
+  """
+  @type quality_issue :: %{
+          type: :missing_data | :invalid_data | :chronological_error | :duplicate | :outlier,
+          index: non_neg_integer(),
+          description: String.t(),
+          severity: :low | :medium | :high | :critical
+        }
+
+  @typedoc """
+  Data cleaning configuration options.
+  """
+  @type cleaning_config :: %{
+          fill_gaps: :forward_fill | :backward_fill | :interpolate | :remove,
+          outlier_detection: :iqr | :zscore | :modified_zscore | :isolation_forest,
+          outlier_threshold: float(),
+          normalization: :minmax | :zscore | :robust | :none
+        }
+
+  @typedoc """
+  Stream composition configuration for chaining indicators.
+  """
+  @type stream_composition :: %{
+          primary_stream: streaming_config(),
+          dependent_streams: [streaming_config()],
+          aggregation_function: (list() -> term()),
+          buffer_management: :sliding_window | :expanding_window
+        }
+
+  @typedoc """
+  Cache configuration for performance optimization.
+  """
+  @type cache_config :: %{
+          enabled: boolean(),
+          max_size: pos_integer(),
+          ttl: non_neg_integer(),
+          eviction_policy: :lru | :lfu | :fifo
+        }
+
   @doc """
   Converts a period specification to an integer.
 

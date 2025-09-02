@@ -1,0 +1,53 @@
+# Sobelow configuration for security analysis
+
+# Output format
+format: "json"
+
+# Verbosity level
+verbose: true
+
+# Exit code configuration
+exit: "low"  # Exit on low severity findings
+
+# Specific checks to run
+checks: [
+  "Config.HTTPS",
+  "Config.CSP", 
+  "Config.Headers",
+  "Config.Secrets",
+  "XSS.Raw",
+  "SQL.Query",
+  "Traversal.FileModule",
+  "CI.System",
+  "DOS.StringToAtom",
+  "DOS.BinToAtom",
+  "RCE.EEx"
+]
+
+# Directories to skip
+skip_dirs: [
+  "deps",
+  "_build", 
+  "test",
+  "priv"
+]
+
+# Files to skip
+skip_files: [
+  "test/**/*.ex",
+  "test/**/*.exs"
+]
+
+# Custom rules configuration
+rules: []
+
+# Confidence levels to include
+confidence: ["high", "medium", "low"]
+
+# Severity levels to include  
+severity: ["high", "medium", "low"]
+
+# Report configuration
+router: ""
+ignore: []
+details: true
