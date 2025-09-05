@@ -5,12 +5,10 @@ ExUnit.configure(
   exclude: [
     # Exclude integration tests by default (run with --include integration)
     :integration,
-    # Exclude benchmark tests by default (run with --include benchmark)
-    :benchmark,
+    # Exclude integration tests by default (run with --include performance)
+    :performance,
     # Exclude property tests by default (run with --include property)
-    :property,
-    # Exclude stress tests by default (run with --include stress)
-    :stress
+    :property
   ],
   # Increase timeout for comprehensive tests
   timeout: 60_000,
