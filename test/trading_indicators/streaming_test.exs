@@ -62,7 +62,8 @@ defmodule TradingIndicators.StreamingTest do
     test "validates indicator parameters during initialization" do
       config = %{
         indicator: SMA,
-        params: [period: -1],  # Invalid period
+        # Invalid period
+        params: [period: -1],
         buffer_size: 100,
         state: nil
       }
@@ -84,7 +85,8 @@ defmodule TradingIndicators.StreamingTest do
       data_batch = Enum.take(@sample_data, 2)
 
       assert {:ok, batch_result, new_state} = Streaming.process_batch(state, data_batch)
-      assert length(batch_result.values) == 1  # SMA with period 2 produces 1 result from 2 points
+      # SMA with period 2 produces 1 result from 2 points
+      assert length(batch_result.values) == 1
       assert batch_result.processing_time > 0
       assert new_state.metrics.total_processed == 2
     end
@@ -193,10 +195,10 @@ defmodule TradingIndicators.StreamingTest do
       }
 
       {:ok, original_state} = Streaming.init_stream(config)
-      
+
       assert {:ok, serialized} = Streaming.serialize_state(original_state)
       assert is_binary(serialized)
-      
+
       assert {:ok, deserialized_state} = Streaming.deserialize_state(serialized)
       assert deserialized_state.config.indicator == SMA
       assert deserialized_state.config.buffer_size == 100
@@ -205,13 +207,16 @@ defmodule TradingIndicators.StreamingTest do
     test "handles serialization errors gracefully" do
       # Test with a state containing non-serializable data (function/reference)
       port = Port.open({:spawn, "echo"}, [])
+
       invalid_state = %{
-        config: %{indicator: port},  # Ports are not safely serializable
+        # Ports are not safely serializable
+        config: %{indicator: port},
         indicator_state: nil,
         buffer: [],
         metrics: %{},
         last_update: DateTime.utc_now()
       }
+
       Port.close(port)
 
       # Since serialization might work in some cases, just check it doesn't crash
@@ -321,11 +326,12 @@ defmodule TradingIndicators.StreamingTest do
       # Generate different batch sizes
       for batch_size <- [1, 5, 10, 50] do
         batch = Enum.take(@sample_data, min(batch_size, length(@sample_data)))
-        
+
         case Streaming.process_batch(state, batch) do
           {:ok, batch_result, new_state} ->
             assert new_state.metrics.total_processed >= length(batch_result.values)
             assert batch_result.processing_time >= 0
+
           {:error, _reason} ->
             # Some batch sizes might not be sufficient for certain indicators
             :ok
@@ -343,13 +349,13 @@ defmodule TradingIndicators.StreamingTest do
       }
 
       {:ok, original_state} = Streaming.init_stream(config)
-      
+
       # Process some data to create a meaningful state
       {:ok, _result, processed_state} = Streaming.process_batch(original_state, @sample_data)
-      
+
       {:ok, serialized} = Streaming.serialize_state(processed_state)
       {:ok, deserialized_state} = Streaming.deserialize_state(serialized)
-      
+
       # Verify key properties are preserved
       assert deserialized_state.config.indicator == processed_state.config.indicator
       assert deserialized_state.config.buffer_size == processed_state.config.buffer_size
@@ -369,16 +375,16 @@ defmodule TradingIndicators.StreamingTest do
       }
 
       {:ok, state} = Streaming.init_stream(config)
-      
+
       # Generate larger datasets
       large_dataset = Stream.cycle(@sample_data) |> Enum.take(1000)
-      
+
       start_time = System.monotonic_time(:microsecond)
       {:ok, _batch_result, _new_state} = Streaming.process_batch(state, large_dataset)
       end_time = System.monotonic_time(:microsecond)
-      
+
       processing_time = end_time - start_time
-      
+
       # Should process at least 15 points per millisecond (more realistic threshold)
       throughput = length(large_dataset) * 1000 / processing_time
       assert throughput > 15

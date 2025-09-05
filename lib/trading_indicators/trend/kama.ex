@@ -63,7 +63,6 @@ defmodule TradingIndicators.Trend.KAMA do
          slow_period <- Keyword.get(opts, :slow_period, @default_slow_period),
          source <- Keyword.get(opts, :source, :close),
          :ok <- Utils.validate_data_length(data, period + 1) do
-      
       prices = extract_prices(data, source)
       calculate_kama_values(prices, period, fast_period, slow_period, data)
     end
@@ -85,7 +84,8 @@ defmodule TradingIndicators.Trend.KAMA do
     end
   end
 
-  def validate_params(_opts), do: {:error, %Errors.InvalidParams{message: "Options must be a keyword list"}}
+  def validate_params(_opts),
+    do: {:error, %Errors.InvalidParams{message: "Options must be a keyword list"}}
 
   @impl true
   def required_periods, do: @default_period + 1
@@ -115,18 +115,20 @@ defmodule TradingIndicators.Trend.KAMA do
   end
 
   @impl true
-  def update_state(%{
-    period: period,
-    fast_period: fast_period,
-    slow_period: slow_period,
-    source: source,
-    prices: prices,
-    kama_value: kama_value,
-    count: count,
-    fast_sc: fast_sc,
-    slow_sc: slow_sc
-  } = _state, data_point) do
-    
+  def update_state(
+        %{
+          period: period,
+          fast_period: fast_period,
+          slow_period: slow_period,
+          source: source,
+          prices: prices,
+          kama_value: kama_value,
+          count: count,
+          fast_sc: fast_sc,
+          slow_sc: slow_sc
+        } = _state,
+        data_point
+      ) do
     try do
       price = extract_single_price(data_point, source)
       new_prices = update_price_buffer(prices, price, period + 1)
@@ -134,7 +136,7 @@ defmodule TradingIndicators.Trend.KAMA do
 
       new_state_base = %{
         period: period,
-        fast_period: fast_period, 
+        fast_period: fast_period,
         slow_period: slow_period,
         source: source,
         prices: new_prices,
@@ -147,19 +149,20 @@ defmodule TradingIndicators.Trend.KAMA do
         # Calculate KAMA
         er = calculate_efficiency_ratio(new_prices, period)
         sc = calculate_adaptive_smoothing_constant(er, fast_sc, slow_sc)
-        
-        new_kama = if kama_value do
-          # KAMA = KAMA_prev + SC × (Price - KAMA_prev)
-          diff = Decimal.sub(price, kama_value)
-          adjustment = Decimal.mult(sc, diff)
-          Decimal.add(kama_value, adjustment)
-        else
-          # First KAMA value = current price
-          price
-        end
+
+        new_kama =
+          if kama_value do
+            # KAMA = KAMA_prev + SC × (Price - KAMA_prev)
+            diff = Decimal.sub(price, kama_value)
+            adjustment = Decimal.mult(sc, diff)
+            Decimal.add(kama_value, adjustment)
+          else
+            # First KAMA value = current price
+            price
+          end
 
         timestamp = get_timestamp(data_point)
-        
+
         result = %{
           value: Decimal.round(new_kama, @precision),
           timestamp: timestamp,
@@ -191,16 +194,20 @@ defmodule TradingIndicators.Trend.KAMA do
   # Private functions
 
   defp validate_period(period, _name) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period, name) do
     {:error, %Errors.InvalidParams{param: name, value: period, expected: "positive integer"}}
   end
 
   defp validate_period_relationship(fast, slow) when fast < slow, do: :ok
+
   defp validate_period_relationship(fast, slow) do
-    {:error, %Errors.InvalidParams{message: "Fast period (#{fast}) must be less than slow period (#{slow})"}}
+    {:error,
+     %Errors.InvalidParams{message: "Fast period (#{fast}) must be less than slow period (#{slow})"}}
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
     {:error, %Errors.InvalidParams{param: :source, value: source}}
   end
@@ -212,7 +219,7 @@ defmodule TradingIndicators.Trend.KAMA do
       _ -> data
     end
   end
-  
+
   defp extract_ohlcv_prices(data, :close), do: Utils.extract_closes(data)
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
@@ -228,27 +235,28 @@ defmodule TradingIndicators.Trend.KAMA do
   defp calculate_kama_values(prices, period, fast_period, slow_period, original_data) do
     fast_sc = calculate_smoothing_constant(fast_period)
     slow_sc = calculate_smoothing_constant(slow_period)
-    
-    results = 
+
+    results =
       prices
       |> Enum.chunk_every(period + 1, 1, :discard)
       |> Enum.with_index(period)
       |> Enum.reduce({[], nil}, fn {price_window, index}, {acc, prev_kama} ->
         current_price = List.last(price_window)
-        
+
         er = calculate_efficiency_ratio(price_window, period)
         sc = calculate_adaptive_smoothing_constant(er, fast_sc, slow_sc)
-        
-        kama = if prev_kama do
-          diff = Decimal.sub(current_price, prev_kama)
-          adjustment = Decimal.mult(sc, diff)
-          Decimal.add(prev_kama, adjustment)
-        else
-          current_price
-        end
+
+        kama =
+          if prev_kama do
+            diff = Decimal.sub(current_price, prev_kama)
+            adjustment = Decimal.mult(sc, diff)
+            Decimal.add(prev_kama, adjustment)
+          else
+            current_price
+          end
 
         timestamp = get_data_timestamp(original_data, index)
-        
+
         result = %{
           value: Decimal.round(kama, @precision),
           timestamp: timestamp,
@@ -273,22 +281,23 @@ defmodule TradingIndicators.Trend.KAMA do
   defp calculate_efficiency_ratio(price_window, _period) do
     current_price = List.last(price_window)
     first_price = List.first(price_window)
-    
+
     # Change = |current - first|
     change = Decimal.abs(Decimal.sub(current_price, first_price))
-    
+
     # Volatility = sum of |price[i] - price[i-1]| over period
-    volatility = 
+    volatility =
       price_window
       |> Enum.chunk_every(2, 1, :discard)
       |> Enum.reduce(Decimal.new("0"), fn [prev, curr], acc ->
         diff = Decimal.abs(Decimal.sub(curr, prev))
         Decimal.add(acc, diff)
       end)
-    
+
     # ER = Change / Volatility (handle division by zero)
     if Decimal.equal?(volatility, Decimal.new("0")) do
-      Decimal.new("1")  # Maximum efficiency when no volatility
+      # Maximum efficiency when no volatility
+      Decimal.new("1")
     else
       Decimal.div(change, volatility)
     end
@@ -304,7 +313,8 @@ defmodule TradingIndicators.Trend.KAMA do
     sc_diff = Decimal.sub(fast_sc, slow_sc)
     scaled_er = Decimal.mult(er, sc_diff)
     linear_sc = Decimal.add(scaled_er, slow_sc)
-    Decimal.mult(linear_sc, linear_sc)  # Square it
+    # Square it
+    Decimal.mult(linear_sc, linear_sc)
   end
 
   defp get_data_timestamp(data, index) when is_list(data) do
@@ -320,6 +330,7 @@ defmodule TradingIndicators.Trend.KAMA do
 
   defp update_price_buffer(prices, new_price, max_size) do
     updated_prices = prices ++ [new_price]
+
     if length(updated_prices) > max_size do
       Enum.take(updated_prices, -max_size)
     else

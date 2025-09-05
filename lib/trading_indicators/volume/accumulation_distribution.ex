@@ -76,13 +76,12 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
       {:ok, result} = AccumulationDistribution.calculate(data, [])
   """
   @impl true
-  @spec calculate(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          :ok <- Utils.validate_data_length(data, 1),
          :ok <- validate_ohlcv_data(data) do
-      
       calculate_ad_values(data)
     end
   end
@@ -108,22 +107,26 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
     else
       # Check for unsupported parameters
       unsupported_keys = Keyword.keys(opts)
-      {:error, %Errors.InvalidParams{
-        message: "AccumulationDistribution does not accept parameters. Unsupported keys: #{inspect(unsupported_keys)}",
-        param: :unsupported_params,
-        value: unsupported_keys,
-        expected: "empty options list"
-      }}
+
+      {:error,
+       %Errors.InvalidParams{
+         message:
+           "AccumulationDistribution does not accept parameters. Unsupported keys: #{inspect(unsupported_keys)}",
+         param: :unsupported_params,
+         value: unsupported_keys,
+         expected: "empty options list"
+       }}
     end
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -160,8 +163,9 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
   @impl true
   @spec init_state(keyword()) :: map()
   def init_state(opts \\ []) do
-    _ = opts  # Suppress unused warning
-    
+    # Suppress unused warning
+    _ = opts
+
     %{
       ad_line_value: nil,
       count: 0
@@ -188,26 +192,28 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
       {:ok, new_state, result} = AccumulationDistribution.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{ad_line_value: ad_line_value, count: count} = _state, 
-                   %{high: high, low: low, close: close, volume: volume} = data_point) do
-    
+  @spec update_state(map(), Types.ohlcv()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{ad_line_value: ad_line_value, count: count} = _state,
+        %{high: high, low: low, close: close, volume: volume} = data_point
+      ) do
     try do
       # Validate the data point
       with :ok <- validate_single_ohlcv_data(data_point) do
         new_count = count + 1
-        
+
         # Calculate Money Flow Multiplier and Money Flow Volume
         {mf_multiplier, mf_volume} = calculate_money_flow(high, low, close, volume)
-        
+
         # Calculate new A/D Line value
-        new_ad_value = if ad_line_value do
-          Decimal.add(ad_line_value, mf_volume)
-        else
-          # First data point: A/D Line starts with Money Flow Volume
-          mf_volume
-        end
+        new_ad_value =
+          if ad_line_value do
+            Decimal.add(ad_line_value, mf_volume)
+          else
+            # First data point: A/D Line starts with Money Flow Volume
+            mf_volume
+          end
 
         new_state = %{
           ad_line_value: new_ad_value,
@@ -236,38 +242,49 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for AccumulationDistribution streaming or data point missing HLCV fields",
-      operation: :update_state,
-      reason: "malformed state or invalid data point"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message:
+         "Invalid state format for AccumulationDistribution streaming or data point missing HLCV fields",
+       operation: :update_state,
+       reason: "malformed state or invalid data point"
+     }}
   end
 
   # Private functions
 
   defp validate_ohlcv_data([]), do: :ok
-  defp validate_ohlcv_data([%{high: high, low: low, close: close, volume: volume} = data_point | rest]) do
+
+  defp validate_ohlcv_data([
+         %{high: high, low: low, close: close, volume: volume} = data_point | rest
+       ]) do
     with :ok <- validate_hlcv_fields(high, low, close, volume, data_point) do
       validate_ohlcv_data(rest)
     end
   end
+
   defp validate_ohlcv_data([invalid | _rest]) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "AccumulationDistribution requires data with high, low, close, and volume fields",
-      expected: "map with :high, :low, :close, :volume keys",
-      received: inspect(invalid)
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "AccumulationDistribution requires data with high, low, close, and volume fields",
+       expected: "map with :high, :low, :close, :volume keys",
+       received: inspect(invalid)
+     }}
   end
 
-  defp validate_single_ohlcv_data(%{high: high, low: low, close: close, volume: volume} = data_point) do
+  defp validate_single_ohlcv_data(
+         %{high: high, low: low, close: close, volume: volume} = data_point
+       ) do
     validate_hlcv_fields(high, low, close, volume, data_point)
   end
+
   defp validate_single_ohlcv_data(invalid) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "AccumulationDistribution requires data with high, low, close, and volume fields",
-      expected: "map with :high, :low, :close, :volume keys",
-      received: inspect(invalid)
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "AccumulationDistribution requires data with high, low, close, and volume fields",
+       expected: "map with :high, :low, :close, :volume keys",
+       received: inspect(invalid)
+     }}
   end
 
   defp validate_hlcv_fields(high, low, close, volume, data_point) do
@@ -287,32 +304,37 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
       :ok
     end
   end
+
   defp validate_price_field(price, field, data_point) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "#{String.capitalize(to_string(field))} price must be a Decimal",
-      expected: "Decimal.t()",
-      received: "#{inspect(price)} in #{inspect(data_point)}"
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "#{String.capitalize(to_string(field))} price must be a Decimal",
+       expected: "Decimal.t()",
+       received: "#{inspect(price)} in #{inspect(data_point)}"
+     }}
   end
 
   defp validate_volume(volume, _data_point) when is_integer(volume) and volume >= 0, do: :ok
+
   defp validate_volume(volume, data_point) do
-    {:error, %Errors.ValidationError{
-      message: "Volume must be a non-negative integer",
-      field: :volume,
-      value: volume,
-      constraint: "must be non-negative integer, got #{inspect(volume)} in #{inspect(data_point)}"
-    }}
+    {:error,
+     %Errors.ValidationError{
+       message: "Volume must be a non-negative integer",
+       field: :volume,
+       value: volume,
+       constraint: "must be non-negative integer, got #{inspect(volume)} in #{inspect(data_point)}"
+     }}
   end
 
   defp validate_price_relationship(high, low, _data_point) do
     if Decimal.gt?(low, high) do
-      {:error, %Errors.ValidationError{
-        message: "Low price cannot be greater than high price",
-        field: :price_relationship,
-        value: {low, high},
-        constraint: "low <= high"
-      }}
+      {:error,
+       %Errors.ValidationError{
+         message: "Low price cannot be greater than high price",
+         field: :price_relationship,
+         value: {low, high},
+         constraint: "low <= high"
+       }}
     else
       :ok
     end
@@ -322,12 +344,17 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
   defp get_timestamp(_), do: DateTime.utc_now()
 
   defp calculate_ad_values([]), do: {:ok, []}
+
   defp calculate_ad_values([first_data | rest_data]) do
     # Calculate first A/D Line value (starts with Money Flow Volume)
-    {first_mf_multiplier, first_mf_volume} = calculate_money_flow(
-      first_data.high, first_data.low, first_data.close, first_data.volume
-    )
-    
+    {first_mf_multiplier, first_mf_volume} =
+      calculate_money_flow(
+        first_data.high,
+        first_data.low,
+        first_data.close,
+        first_data.volume
+      )
+
     first_result = %{
       value: Decimal.round(first_mf_volume, @precision),
       timestamp: get_timestamp(first_data),
@@ -343,17 +370,21 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
     }
 
     # Process remaining data points
-    {final_results, _final_ad} = 
+    {final_results, _final_ad} =
       rest_data
       |> Enum.reduce({[first_result], first_mf_volume}, fn current_data, {acc_results, prev_ad} ->
         # Calculate Money Flow for current data point
-        {mf_multiplier, mf_volume} = calculate_money_flow(
-          current_data.high, current_data.low, current_data.close, current_data.volume
-        )
-        
+        {mf_multiplier, mf_volume} =
+          calculate_money_flow(
+            current_data.high,
+            current_data.low,
+            current_data.close,
+            current_data.volume
+          )
+
         # Calculate new A/D Line value
         new_ad = Decimal.add(prev_ad, mf_volume)
-        
+
         result = %{
           value: Decimal.round(new_ad, @precision),
           timestamp: get_timestamp(current_data),
@@ -367,7 +398,7 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
             low: current_data.low
           }
         }
-        
+
         {[result | acc_results], new_ad}
       end)
 
@@ -376,7 +407,7 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
 
   defp calculate_money_flow(high, low, close, volume) do
     volume_decimal = Decimal.new(volume)
-    
+
     # Handle special case where High = Low (no price range)
     if Decimal.equal?(high, low) do
       # Money Flow Multiplier = 0 when there's no price range
@@ -389,10 +420,10 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
       high_minus_close = Decimal.sub(high, close)
       numerator = Decimal.sub(close_minus_low, high_minus_close)
       denominator = Decimal.sub(high, low)
-      
+
       mf_multiplier = Decimal.div(numerator, denominator)
       mf_volume = Decimal.mult(mf_multiplier, volume_decimal)
-      
+
       {mf_multiplier, mf_volume}
     end
   end

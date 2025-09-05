@@ -100,15 +100,14 @@ defmodule TradingIndicators.Momentum.CCI do
       {:ok, result} = CCI.calculate(data, period: 20)
   """
   @impl true
-  @spec calculate(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
          constant <- Keyword.get(opts, :constant, @default_constant) |> Decimal.new(),
          :ok <- validate_data_format(data),
          :ok <- Utils.validate_data_length(data, period) do
-      
       calculate_cci_values(data, period, constant)
     end
   end
@@ -138,12 +137,13 @@ defmodule TradingIndicators.Momentum.CCI do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -234,32 +234,34 @@ defmodule TradingIndicators.Momentum.CCI do
       {:ok, new_state, result} = CCI.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{period: period, constant: constant, typical_prices: typical_prices, count: count} = _state,
-                   %{high: high, low: low, close: close} = data_point) do
-    
+  @spec update_state(map(), Types.ohlcv()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{period: period, constant: constant, typical_prices: typical_prices, count: count} =
+          _state,
+        %{high: high, low: low, close: close} = data_point
+      ) do
     try do
       new_count = count + 1
-      
+
       # Calculate typical price for current data point
       typical_price = calculate_typical_price(high, low, close)
-      
+
       # Update typical prices buffer
       new_typical_prices = update_buffer(typical_prices, typical_price, period)
-      
+
       new_state = %{
         period: period,
         constant: constant,
         typical_prices: new_typical_prices,
         count: new_count
       }
-      
+
       # Calculate CCI if we have enough data
       if new_count >= period do
         cci_value = calculate_cci_value(new_typical_prices, period, constant)
         timestamp = Map.get(data_point, :timestamp, DateTime.utc_now())
-        
+
         result = %{
           value: cci_value,
           timestamp: timestamp,
@@ -270,7 +272,7 @@ defmodule TradingIndicators.Momentum.CCI do
             signal: determine_signal(cci_value)
           }
         }
-        
+
         {:ok, new_state, result}
       else
         {:ok, new_state, nil}
@@ -281,16 +283,18 @@ defmodule TradingIndicators.Momentum.CCI do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for CCI streaming",
-      operation: :update_state,
-      reason: "malformed state or missing required OHLC fields"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for CCI streaming",
+       operation: :update_state,
+       reason: "malformed state or missing required OHLC fields"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period) do
     {:error, Errors.invalid_period(period)}
   end
@@ -298,57 +302,66 @@ defmodule TradingIndicators.Momentum.CCI do
   defp validate_constant(constant) when is_binary(constant) do
     try do
       decimal_constant = Decimal.new(constant)
-      if Decimal.gt?(decimal_constant, Decimal.new("0")), do: :ok, else: raise "negative"
+      if Decimal.gt?(decimal_constant, Decimal.new("0")), do: :ok, else: raise("negative")
     rescue
-      _ -> 
-        {:error, %Errors.InvalidParams{
-          message: "Constant must be a positive number string, got #{inspect(constant)}",
-          param: :constant,
-          value: constant,
-          expected: "positive number string"
-        }}
+      _ ->
+        {:error,
+         %Errors.InvalidParams{
+           message: "Constant must be a positive number string, got #{inspect(constant)}",
+           param: :constant,
+           value: constant,
+           expected: "positive number string"
+         }}
     end
   end
 
   defp validate_constant(constant) when is_number(constant) and constant > 0, do: :ok
+
   defp validate_constant(constant) do
-    {:error, %Errors.InvalidParams{
-      message: "Constant must be a positive number, got #{inspect(constant)}",
-      param: :constant,
-      value: constant,
-      expected: "positive number"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Constant must be a positive number, got #{inspect(constant)}",
+       param: :constant,
+       value: constant,
+       expected: "positive number"
+     }}
   end
 
   defp validate_data_format([]), do: :ok
+
   defp validate_data_format([first | _rest]) do
     case first do
-      %{high: _, low: _, close: _} -> :ok
-      _ -> 
-        {:error, %Errors.InvalidDataFormat{
-          message: "CCI requires OHLCV data with high, low, and close fields",
-          expected: "OHLCV data with :high, :low, :close fields",
-          received: "data without required fields"
-        }}
+      %{high: _, low: _, close: _} ->
+        :ok
+
+      _ ->
+        {:error,
+         %Errors.InvalidDataFormat{
+           message: "CCI requires OHLCV data with high, low, and close fields",
+           expected: "OHLCV data with :high, :low, :close fields",
+           received: "data without required fields"
+         }}
     end
   end
 
   defp calculate_cci_values(data, period, constant) do
     # Calculate typical prices for all data points
-    typical_prices = Enum.map(data, fn %{high: h, low: l, close: c} ->
-      calculate_typical_price(h, l, c)
-    end)
-    
+    typical_prices =
+      Enum.map(data, fn %{high: h, low: l, close: c} ->
+        calculate_typical_price(h, l, c)
+      end)
+
     # Calculate CCI values using sliding windows
     typical_price_windows = Utils.sliding_window(typical_prices, period)
-    
-    cci_values = Enum.map(typical_price_windows, fn window ->
-      calculate_cci_value(window, period, constant)
-    end)
-    
+
+    cci_values =
+      Enum.map(typical_price_windows, fn window ->
+        calculate_cci_value(window, period, constant)
+      end)
+
     # Build results
     results = build_cci_results(cci_values, period, constant, data)
-    
+
     {:ok, results}
   end
 
@@ -359,17 +372,20 @@ defmodule TradingIndicators.Momentum.CCI do
   defp calculate_cci_value(typical_prices, _period, constant) do
     # Calculate simple moving average of typical prices
     sma_typical = Utils.mean(typical_prices)
-    
+
     # Calculate mean deviation
     mean_deviation = calculate_mean_deviation(typical_prices, sma_typical)
-    
+
     # Calculate CCI
     current_typical = List.last(typical_prices)
     numerator = Decimal.sub(current_typical, sma_typical)
     denominator = Decimal.mult(constant, mean_deviation)
-    
+
     case Decimal.equal?(denominator, Decimal.new("0")) do
-      true -> Decimal.new("0")  # Avoid division by zero
+      # Avoid division by zero
+      true ->
+        Decimal.new("0")
+
       false ->
         cci = Decimal.div(numerator, denominator)
         Decimal.round(cci, @precision)
@@ -378,10 +394,11 @@ defmodule TradingIndicators.Momentum.CCI do
 
   defp calculate_mean_deviation(values, mean_value) do
     # Mean deviation = average of absolute deviations from the mean
-    deviations = Enum.map(values, fn value ->
-      Decimal.abs(Decimal.sub(value, mean_value))
-    end)
-    
+    deviations =
+      Enum.map(values, fn value ->
+        Decimal.abs(Decimal.sub(value, mean_value))
+      end)
+
     Utils.mean(deviations)
   end
 
@@ -390,7 +407,7 @@ defmodule TradingIndicators.Momentum.CCI do
     |> Enum.with_index(period - 1)
     |> Enum.map(fn {cci_value, index} ->
       timestamp = get_data_timestamp(original_data, index)
-      
+
       %{
         value: cci_value,
         timestamp: timestamp,
@@ -407,7 +424,7 @@ defmodule TradingIndicators.Momentum.CCI do
   defp determine_signal(cci_value) do
     hundred = Decimal.new("100")
     minus_hundred = Decimal.new("-100")
-    
+
     cond do
       Decimal.gt?(cci_value, hundred) -> :overbought
       Decimal.lt?(cci_value, minus_hundred) -> :oversold
@@ -428,7 +445,7 @@ defmodule TradingIndicators.Momentum.CCI do
 
   defp update_buffer(buffer, new_value, max_size) do
     updated_buffer = buffer ++ [new_value]
-    
+
     if length(updated_buffer) > max_size do
       Enum.take(updated_buffer, -max_size)
     else

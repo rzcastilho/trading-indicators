@@ -107,8 +107,8 @@ defmodule TradingIndicators.Momentum.Stochastic do
       {:ok, result} = Stochastic.calculate(data, k_period: 14, d_period: 3)
   """
   @impl true
-  @spec calculate(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          k_period <- Keyword.get(opts, :k_period, @default_k_period),
@@ -118,7 +118,6 @@ defmodule TradingIndicators.Momentum.Stochastic do
          oversold <- Keyword.get(opts, :oversold, @default_oversold),
          :ok <- validate_data_format(data),
          :ok <- Utils.validate_data_length(data, k_period + d_period - 1) do
-      
       calculate_stochastic_values(data, k_period, d_period, k_smoothing, overbought, oversold)
     end
   end
@@ -155,12 +154,13 @@ defmodule TradingIndicators.Momentum.Stochastic do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -262,68 +262,84 @@ defmodule TradingIndicators.Momentum.Stochastic do
       {:ok, new_state, result} = Stochastic.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{k_period: k_period, d_period: d_period, k_smoothing: k_smoothing,
-                     overbought: overbought, oversold: oversold,
-                     highs: highs, lows: lows, closes: closes, 
-                     k_values: k_values, count: count} = _state, 
-                   %{high: high, low: low, close: close} = data_point) do
-    
+  @spec update_state(map(), Types.ohlcv()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{
+          k_period: k_period,
+          d_period: d_period,
+          k_smoothing: k_smoothing,
+          overbought: overbought,
+          oversold: oversold,
+          highs: highs,
+          lows: lows,
+          closes: closes,
+          k_values: k_values,
+          count: count
+        } = _state,
+        %{high: high, low: low, close: close} = data_point
+      ) do
     try do
       new_count = count + 1
-      
+
       # Update price buffers
       new_highs = update_buffer(highs, high, k_period)
-      new_lows = update_buffer(lows, low, k_period)  
+      new_lows = update_buffer(lows, low, k_period)
       new_closes = update_buffer(closes, close, k_period)
-      
+
       # Calculate %K if we have enough data
-      {new_k_values, result} = if new_count >= k_period do
-        k_value = calculate_k_value(new_highs, new_lows, close)
-        smoothed_k = if k_smoothing > 1 do
-          # Apply smoothing to %K
-          temp_k_values = update_buffer(k_values, k_value, k_smoothing)
-          if length(temp_k_values) >= k_smoothing do
-            Utils.mean(temp_k_values)
+      {new_k_values, result} =
+        if new_count >= k_period do
+          k_value = calculate_k_value(new_highs, new_lows, close)
+
+          smoothed_k =
+            if k_smoothing > 1 do
+              # Apply smoothing to %K
+              temp_k_values = update_buffer(k_values, k_value, k_smoothing)
+
+              if length(temp_k_values) >= k_smoothing do
+                Utils.mean(temp_k_values)
+              else
+                k_value
+              end
+            else
+              k_value
+            end
+
+          updated_k_values = update_buffer(k_values, smoothed_k, d_period)
+
+          # Calculate %D if we have enough %K values
+          if length(updated_k_values) >= d_period do
+            d_value = Utils.mean(updated_k_values)
+            timestamp = Map.get(data_point, :timestamp, DateTime.utc_now())
+
+            result = %{
+              value: %{
+                k: Decimal.round(smoothed_k, @precision),
+                d: Decimal.round(d_value, @precision)
+              },
+              timestamp: timestamp,
+              metadata: %{
+                indicator: "Stochastic",
+                k_period: k_period,
+                d_period: d_period,
+                k_smoothing: k_smoothing,
+                overbought: overbought,
+                oversold: oversold,
+                k_signal: determine_signal(smoothed_k, overbought, oversold),
+                d_signal: determine_signal(d_value, overbought, oversold),
+                crossover: determine_crossover(smoothed_k, d_value)
+              }
+            }
+
+            {updated_k_values, result}
           else
-            k_value
+            {updated_k_values, nil}
           end
         else
-          k_value
+          {k_values, nil}
         end
-        
-        updated_k_values = update_buffer(k_values, smoothed_k, d_period)
-        
-        # Calculate %D if we have enough %K values
-        if length(updated_k_values) >= d_period do
-          d_value = Utils.mean(updated_k_values)
-          timestamp = Map.get(data_point, :timestamp, DateTime.utc_now())
-          
-          result = %{
-            value: %{k: Decimal.round(smoothed_k, @precision), d: Decimal.round(d_value, @precision)},
-            timestamp: timestamp,
-            metadata: %{
-              indicator: "Stochastic",
-              k_period: k_period,
-              d_period: d_period,
-              k_smoothing: k_smoothing,
-              overbought: overbought,
-              oversold: oversold,
-              k_signal: determine_signal(smoothed_k, overbought, oversold),
-              d_signal: determine_signal(d_value, overbought, oversold),
-              crossover: determine_crossover(smoothed_k, d_value)
-            }
-          }
-          
-          {updated_k_values, result}
-        else
-          {updated_k_values, nil}
-        end
-      else
-        {k_values, nil}
-      end
-      
+
       new_state = %{
         k_period: k_period,
         d_period: d_period,
@@ -336,7 +352,7 @@ defmodule TradingIndicators.Momentum.Stochastic do
         k_values: new_k_values,
         count: new_count
       }
-      
+
       {:ok, new_state, result}
     rescue
       error -> {:error, error}
@@ -344,55 +360,66 @@ defmodule TradingIndicators.Momentum.Stochastic do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for Stochastic streaming",
-      operation: :update_state,
-      reason: "malformed state or missing required OHLC fields"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for Stochastic streaming",
+       operation: :update_state,
+       reason: "malformed state or missing required OHLC fields"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period, _name) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period, name) do
-    {:error, %Errors.InvalidParams{
-      message: "#{name} must be a positive integer, got #{inspect(period)}",
-      param: name,
-      value: period,
-      expected: "positive integer"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "#{name} must be a positive integer, got #{inspect(period)}",
+       param: name,
+       value: period,
+       expected: "positive integer"
+     }}
   end
 
   defp validate_level(level, _name) when is_number(level) and level >= 0 and level <= 100, do: :ok
+
   defp validate_level(level, name) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid #{name} level: #{inspect(level)}",
-      param: name,
-      value: level,
-      expected: "number between 0 and 100"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid #{name} level: #{inspect(level)}",
+       param: name,
+       value: level,
+       expected: "number between 0 and 100"
+     }}
   end
 
   defp validate_level_relationship(oversold, overbought) when oversold < overbought, do: :ok
+
   defp validate_level_relationship(oversold, overbought) do
-    {:error, %Errors.InvalidParams{
-      message: "Oversold level (#{oversold}) must be less than overbought level (#{overbought})",
-      param: :levels,
-      value: {oversold, overbought},
-      expected: "oversold < overbought"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Oversold level (#{oversold}) must be less than overbought level (#{overbought})",
+       param: :levels,
+       value: {oversold, overbought},
+       expected: "oversold < overbought"
+     }}
   end
 
   defp validate_data_format([]), do: :ok
+
   defp validate_data_format([first | _rest]) do
     case first do
-      %{high: _, low: _, close: _} -> :ok
-      _ -> 
-        {:error, %Errors.InvalidDataFormat{
-          message: "Stochastic requires OHLCV data with high, low, and close fields",
-          expected: "OHLCV data with :high, :low, :close fields",
-          received: "data without required fields"
-        }}
+      %{high: _, low: _, close: _} ->
+        :ok
+
+      _ ->
+        {:error,
+         %Errors.InvalidDataFormat{
+           message: "Stochastic requires OHLCV data with high, low, and close fields",
+           expected: "OHLCV data with :high, :low, :close fields",
+           received: "data without required fields"
+         }}
     end
   end
 
@@ -401,24 +428,34 @@ defmodule TradingIndicators.Momentum.Stochastic do
     highs = Utils.extract_highs(data)
     lows = Utils.extract_lows(data)
     closes = Utils.extract_closes(data)
-    
+
     # Calculate %K values
     k_values = calculate_k_series(highs, lows, closes, k_period)
-    
+
     # Apply K smoothing if specified
-    smoothed_k_values = if k_smoothing > 1 do
-      apply_smoothing(k_values, k_smoothing)
-    else
-      k_values
-    end
-    
+    smoothed_k_values =
+      if k_smoothing > 1 do
+        apply_smoothing(k_values, k_smoothing)
+      else
+        k_values
+      end
+
     # Calculate %D values
     d_values = calculate_d_series(smoothed_k_values, d_period)
-    
+
     # Build results
-    results = build_stochastic_results(smoothed_k_values, d_values, k_period, d_period, 
-                                      k_smoothing, overbought, oversold, data)
-    
+    results =
+      build_stochastic_results(
+        smoothed_k_values,
+        d_values,
+        k_period,
+        d_period,
+        k_smoothing,
+        overbought,
+        oversold,
+        data
+      )
+
     {:ok, results}
   end
 
@@ -426,7 +463,7 @@ defmodule TradingIndicators.Momentum.Stochastic do
     high_windows = Utils.sliding_window(highs, k_period)
     low_windows = Utils.sliding_window(lows, k_period)
     close_slice = Enum.drop(closes, k_period - 1)
-    
+
     Enum.zip([high_windows, low_windows, close_slice])
     |> Enum.map(fn {high_window, low_window, close} ->
       calculate_k_value(high_window, low_window, close)
@@ -436,12 +473,15 @@ defmodule TradingIndicators.Momentum.Stochastic do
   defp calculate_k_value(highs, lows, close) do
     highest_high = Enum.max_by(highs, &Decimal.to_float/1)
     lowest_low = Enum.min_by(lows, &Decimal.to_float/1)
-    
+
     numerator = Decimal.sub(close, lowest_low)
     denominator = Decimal.sub(highest_high, lowest_low)
-    
+
     case Decimal.equal?(denominator, Decimal.new("0")) do
-      true -> Decimal.new("50.0")  # Neutral when no price range
+      # Neutral when no price range
+      true ->
+        Decimal.new("50.0")
+
       false ->
         ratio = Decimal.div(numerator, denominator)
         Decimal.mult(ratio, Decimal.new("100"))
@@ -458,17 +498,25 @@ defmodule TradingIndicators.Momentum.Stochastic do
     |> Enum.map(&Utils.mean/1)
   end
 
-  defp build_stochastic_results(k_values, d_values, k_period, d_period, k_smoothing, 
-                               overbought, oversold, original_data) do
+  defp build_stochastic_results(
+         k_values,
+         d_values,
+         k_period,
+         d_period,
+         k_smoothing,
+         overbought,
+         oversold,
+         original_data
+       ) do
     # Align results - D values start later due to additional smoothing
     start_index = k_period + d_period - 2
     k_aligned = Enum.drop(k_values, d_period - 1)
-    
+
     Enum.zip(k_aligned, d_values)
     |> Enum.with_index(start_index)
     |> Enum.map(fn {{k_value, d_value}, index} ->
       timestamp = get_data_timestamp(original_data, index)
-      
+
       %{
         value: %{
           k: Decimal.round(k_value, @precision),
@@ -493,7 +541,7 @@ defmodule TradingIndicators.Momentum.Stochastic do
   defp determine_signal(value, overbought, oversold) do
     overbought_decimal = Decimal.new(overbought)
     oversold_decimal = Decimal.new(oversold)
-    
+
     cond do
       Decimal.gt?(value, overbought_decimal) -> :overbought
       Decimal.lt?(value, oversold_decimal) -> :oversold
@@ -522,7 +570,7 @@ defmodule TradingIndicators.Momentum.Stochastic do
 
   defp update_buffer(buffer, new_value, max_size) do
     updated_buffer = buffer ++ [new_value]
-    
+
     if length(updated_buffer) > max_size do
       Enum.take(updated_buffer, -max_size)
     else

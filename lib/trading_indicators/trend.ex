@@ -42,7 +42,7 @@ defmodule TradingIndicators.Trend do
 
   - `:period` - Number of periods for calculation
   - `:source` - Price source (`:open`, `:high`, `:low`, `:close`)
-  
+
   Specific indicators may have additional parameters. See individual indicator
   documentation for complete parameter lists.
   """
@@ -89,17 +89,18 @@ defmodule TradingIndicators.Trend do
       {:ok, results} = TradingIndicators.Trend.calculate(SMA, data, period: 20)
   """
   @spec calculate(indicator_module(), Types.data_series() | [Decimal.t()], keyword()) ::
-    {:ok, Types.result_series()} | {:error, term()}
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(indicator, data, opts \\ []) do
     if indicator in available_indicators() do
       indicator.calculate(data, opts)
     else
-      {:error, %Errors.InvalidParams{
-        message: "Unknown trend indicator: #{inspect(indicator)}",
-        param: :indicator,
-        value: indicator,
-        expected: "one of #{inspect(available_indicators())}"
-      }}
+      {:error,
+       %Errors.InvalidParams{
+         message: "Unknown trend indicator: #{inspect(indicator)}",
+         param: :indicator,
+         value: indicator,
+         expected: "one of #{inspect(available_indicators())}"
+       }}
     end
   end
 
@@ -146,42 +147,43 @@ defmodule TradingIndicators.Trend do
 
       {:ok, new_state, result} = TradingIndicators.Trend.update_stream(state, data_point)
   """
-  @spec update_stream(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  @spec update_stream(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
   def update_stream(state, data_point) do
     # Try to determine indicator from state metadata or structure
     cond do
       # SMA state
-      Map.has_key?(state, :period) and Map.has_key?(state, :prices) and 
-      Map.has_key?(state, :count) and not Map.has_key?(state, :ema_value) ->
+      Map.has_key?(state, :period) and Map.has_key?(state, :prices) and
+        Map.has_key?(state, :count) and not Map.has_key?(state, :ema_value) ->
         SMA.update_state(state, data_point)
-      
+
       # EMA state  
       Map.has_key?(state, :ema_value) and Map.has_key?(state, :smoothing) ->
         EMA.update_state(state, data_point)
-      
+
       # WMA state
       Map.has_key?(state, :weight_sum) ->
         WMA.update_state(state, data_point)
-        
+
       # HMA state
       Map.has_key?(state, :wma_half_state) ->
         HMA.update_state(state, data_point)
-        
+
       # MACD state  
       Map.has_key?(state, :fast_ema_state) ->
         MACD.update_state(state, data_point)
-        
+
       # KAMA state
       Map.has_key?(state, :kama_value) and Map.has_key?(state, :fast_sc) ->
         KAMA.update_state(state, data_point)
-      
+
       true ->
-        {:error, %Errors.StreamStateError{
-          message: "Unable to determine indicator type from state",
-          operation: :update_stream,
-          reason: "unknown state format"
-        }}
+        {:error,
+         %Errors.StreamStateError{
+           message: "Unable to determine indicator type from state",
+           operation: :update_stream,
+           reason: "unknown state format"
+         }}
     end
   end
 
@@ -199,8 +201,8 @@ defmodule TradingIndicators.Trend do
 
       {:ok, results} = TradingIndicators.Trend.sma(data, period: 20)
   """
-  @spec sma(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec sma(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def sma(data, opts \\ []), do: SMA.calculate(data, opts)
 
   @doc """
@@ -215,8 +217,8 @@ defmodule TradingIndicators.Trend do
 
       {:ok, results} = TradingIndicators.Trend.ema(data, period: 12)
   """
-  @spec ema(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec ema(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def ema(data, opts \\ []), do: EMA.calculate(data, opts)
 
   @doc """
@@ -231,8 +233,8 @@ defmodule TradingIndicators.Trend do
 
       {:ok, results} = TradingIndicators.Trend.wma(data, period: 10)
   """
-  @spec wma(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec wma(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def wma(data, opts \\ []), do: WMA.calculate(data, opts)
 
   @doc """
@@ -247,8 +249,8 @@ defmodule TradingIndicators.Trend do
 
       {:ok, results} = TradingIndicators.Trend.hma(data, period: 14)
   """
-  @spec hma(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec hma(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def hma(data, opts \\ []), do: HMA.calculate(data, opts)
 
   @doc """
@@ -263,8 +265,8 @@ defmodule TradingIndicators.Trend do
 
       {:ok, results} = TradingIndicators.Trend.kama(data, period: 10)
   """
-  @spec kama(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec kama(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def kama(data, opts \\ []), do: KAMA.calculate(data, opts)
 
   @doc """
@@ -279,8 +281,8 @@ defmodule TradingIndicators.Trend do
 
       {:ok, results} = TradingIndicators.Trend.macd(data, fast_period: 12, slow_period: 26, signal_period: 9)
   """
-  @spec macd(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec macd(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def macd(data, opts \\ []), do: MACD.calculate(data, opts)
 
   @doc """

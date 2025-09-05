@@ -3,13 +3,19 @@ ExUnit.start()
 # Configuration for comprehensive testing
 ExUnit.configure(
   exclude: [
-    :integration,    # Exclude integration tests by default (run with --include integration)
-    :benchmark,      # Exclude benchmark tests by default (run with --include benchmark)
-    :property,       # Exclude property tests by default (run with --include property)
-    :stress         # Exclude stress tests by default (run with --include stress)
+    # Exclude integration tests by default (run with --include integration)
+    :integration,
+    # Exclude benchmark tests by default (run with --include benchmark)
+    :benchmark,
+    # Exclude property tests by default (run with --include property)
+    :property,
+    # Exclude stress tests by default (run with --include stress)
+    :stress
   ],
-  timeout: 60_000,   # Increase timeout for comprehensive tests
-  max_cases: System.schedulers_online() * 2 # Optimize parallel execution
+  # Increase timeout for comprehensive tests
+  timeout: 60_000,
+  # Optimize parallel execution
+  max_cases: System.schedulers_online() * 2
 )
 
 # Test support modules are loaded from test/support/

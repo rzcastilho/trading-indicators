@@ -2,48 +2,7 @@
 # This script validates the implementation of all Phase 6 advanced features
 
 # Sample data for testing
-sample_data = [
-  %{
-    open: Decimal.new("100.0"),
-    high: Decimal.new("105.0"),
-    low: Decimal.new("99.0"),
-    close: Decimal.new("103.0"),
-    volume: 1000,
-    timestamp: ~U[2024-01-01 09:30:00Z]
-  },
-  %{
-    open: Decimal.new("103.0"),
-    high: Decimal.new("107.0"),
-    low: Decimal.new("102.0"),
-    close: Decimal.new("106.0"),
-    volume: 1200,
-    timestamp: ~U[2024-01-01 09:31:00Z]
-  },
-  %{
-    open: Decimal.new("106.0"),
-    high: Decimal.new("108.0"),
-    low: Decimal.new("105.0"),
-    close: Decimal.new("107.0"),
-    volume: 1100,
-    timestamp: ~U[2024-01-01 09:32:00Z]
-  },
-  %{
-    open: Decimal.new("107.0"),
-    high: Decimal.new("109.0"),
-    low: Decimal.new("106.0"),
-    close: Decimal.new("108.0"),
-    volume: 1300,
-    timestamp: ~U[2024-01-01 09:33:00Z]
-  },
-  %{
-    open: Decimal.new("108.0"),
-    high: Decimal.new("110.0"),
-    low: Decimal.new("107.0"),
-    close: Decimal.new("109.0"),
-    volume: 1400,
-    timestamp: ~U[2024-01-01 09:34:00Z]
-  }
-]
+sample_data = TradingIndicators.TestSupport.DataGenerator.sample_ohlcv_data(50)
 
 IO.puts("=== Phase 6: Advanced Features Testing ===\n")
 
@@ -82,8 +41,8 @@ IO.puts("2. Testing Pipeline Composition...")
 
 pipeline_result = 
   TradingIndicators.Pipeline.new()
-  |> TradingIndicators.Pipeline.add_stage("sma_short", TradingIndicators.Trend.SMA, [period: 2])
-  |> TradingIndicators.Pipeline.add_stage("sma_long", TradingIndicators.Trend.SMA, [period: 3])
+  |> TradingIndicators.Pipeline.add_stage("sma_short", TradingIndicators.Trend.SMA, [period: 7])
+  |> TradingIndicators.Pipeline.add_stage("sma_long", TradingIndicators.Trend.SMA, [period: 14])
   |> TradingIndicators.Pipeline.build()
 
 case pipeline_result do
@@ -95,6 +54,7 @@ case pipeline_result do
         IO.puts("✓ Pipeline execution successful")
         IO.puts("  Total processing time: #{result.execution_metrics.total_processing_time}μs")
         IO.puts("  Stages executed: #{Enum.join(Map.keys(result.stage_results), ", ")}")
+        IO.inspect(result)
       {:error, reason} ->
         IO.puts("✗ Pipeline execution failed: #{inspect(reason)}")
     end
@@ -109,8 +69,8 @@ IO.puts("3. Testing Performance Benchmarking...")
 
 # Create multiple datasets of different sizes
 datasets = [
-  Enum.take(sample_data, 3),
-  Enum.take(sample_data, 5),
+  Enum.take(sample_data, 20),
+  Enum.take(sample_data, 30),
   sample_data ++ sample_data  # Double the data
 ]
 

@@ -102,8 +102,8 @@ defmodule TradingIndicators.Momentum.RSI do
       {:ok, result} = RSI.calculate(data, period: 14)
   """
   @impl true
-  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
@@ -112,7 +112,6 @@ defmodule TradingIndicators.Momentum.RSI do
          overbought <- Keyword.get(opts, :overbought, @default_overbought),
          oversold <- Keyword.get(opts, :oversold, @default_oversold),
          :ok <- Utils.validate_data_length(data, period + 1) do
-      
       prices = extract_prices(data, source)
       calculate_rsi_values(prices, period, smoothing, overbought, oversold, data)
     end
@@ -150,12 +149,13 @@ defmodule TradingIndicators.Momentum.RSI do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -257,18 +257,28 @@ defmodule TradingIndicators.Momentum.RSI do
       {:ok, new_state, result} = RSI.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{period: period, source: source, smoothing: smoothing,
-                     overbought: overbought, oversold: oversold,
-                     previous_close: prev_close, gains: gains, losses: losses,
-                     avg_gain: avg_gain, avg_loss: avg_loss, count: count} = _state, 
-                   data_point) do
-    
+  @spec update_state(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{
+          period: period,
+          source: source,
+          smoothing: smoothing,
+          overbought: overbought,
+          oversold: oversold,
+          previous_close: prev_close,
+          gains: gains,
+          losses: losses,
+          avg_gain: avg_gain,
+          avg_loss: avg_loss,
+          count: count
+        } = _state,
+        data_point
+      ) do
     try do
       current_close = extract_single_price(data_point, source)
       new_count = count + 1
-      
+
       # First data point - just store the close price
       if prev_close == nil do
         new_state = %{
@@ -284,22 +294,34 @@ defmodule TradingIndicators.Momentum.RSI do
           avg_loss: avg_loss,
           count: new_count
         }
+
         {:ok, new_state, nil}
       else
         # Calculate gain/loss
         change = Decimal.sub(current_close, prev_close)
         gain = if Decimal.gt?(change, Decimal.new("0")), do: change, else: Decimal.new("0")
-        loss = if Decimal.lt?(change, Decimal.new("0")), do: Decimal.abs(change), else: Decimal.new("0")
-        
+
+        loss =
+          if Decimal.lt?(change, Decimal.new("0")), do: Decimal.abs(change), else: Decimal.new("0")
+
         new_gains = update_buffer(gains, gain, period)
         new_losses = update_buffer(losses, loss, period)
-        
+
         # Calculate RSI if we have enough data
-        {new_avg_gain, new_avg_loss, rsi_result} = calculate_streaming_rsi(
-          new_gains, new_losses, avg_gain, avg_loss, period, smoothing,
-          overbought, oversold, new_count, data_point
-        )
-        
+        {new_avg_gain, new_avg_loss, rsi_result} =
+          calculate_streaming_rsi(
+            new_gains,
+            new_losses,
+            avg_gain,
+            avg_loss,
+            period,
+            smoothing,
+            overbought,
+            oversold,
+            new_count,
+            data_point
+          )
+
         new_state = %{
           period: period,
           source: source,
@@ -313,7 +335,7 @@ defmodule TradingIndicators.Momentum.RSI do
           avg_loss: new_avg_loss,
           count: new_count
         }
-        
+
         {:ok, new_state, rsi_result}
       end
     rescue
@@ -322,68 +344,81 @@ defmodule TradingIndicators.Momentum.RSI do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for RSI streaming",
-      operation: :update_state,
-      reason: "malformed state"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for RSI streaming",
+       operation: :update_state,
+       reason: "malformed state"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period) do
     {:error, Errors.invalid_period(period)}
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid source: #{inspect(source)}",
-      param: :source,
-      value: source,
-      expected: "one of [:open, :high, :low, :close]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid source: #{inspect(source)}",
+       param: :source,
+       value: source,
+       expected: "one of [:open, :high, :low, :close]"
+     }}
   end
 
   defp validate_smoothing(smoothing) when smoothing in [:wilder, :sma], do: :ok
+
   defp validate_smoothing(smoothing) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid smoothing method: #{inspect(smoothing)}",
-      param: :smoothing,
-      value: smoothing,
-      expected: "one of [:wilder, :sma]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid smoothing method: #{inspect(smoothing)}",
+       param: :smoothing,
+       value: smoothing,
+       expected: "one of [:wilder, :sma]"
+     }}
   end
 
   defp validate_level(level, _name) when is_number(level) and level >= 0 and level <= 100, do: :ok
+
   defp validate_level(level, name) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid #{name} level: #{inspect(level)}",
-      param: name,
-      value: level,
-      expected: "number between 0 and 100"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid #{name} level: #{inspect(level)}",
+       param: name,
+       value: level,
+       expected: "number between 0 and 100"
+     }}
   end
 
   defp validate_level_relationship(oversold, overbought) when oversold < overbought, do: :ok
+
   defp validate_level_relationship(oversold, overbought) do
-    {:error, %Errors.InvalidParams{
-      message: "Oversold level (#{oversold}) must be less than overbought level (#{overbought})",
-      param: :levels,
-      value: {oversold, overbought},
-      expected: "oversold < overbought"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Oversold level (#{oversold}) must be less than overbought level (#{overbought})",
+       param: :levels,
+       value: {oversold, overbought},
+       expected: "oversold < overbought"
+     }}
   end
 
   defp extract_prices(data, source) when is_list(data) and length(data) > 0 do
     case List.first(data) do
-      %Decimal{} -> data  # Already a price series
-      %{} = _ohlcv -> extract_ohlcv_prices(data, source)  # OHLCV data
-      _ -> data  # Assume it's some other price series format
+      # Already a price series
+      %Decimal{} -> data
+      # OHLCV data
+      %{} = _ohlcv -> extract_ohlcv_prices(data, source)
+      # Assume it's some other price series format
+      _ -> data
     end
   end
-  
+
   defp extract_ohlcv_prices(data, :close), do: Utils.extract_closes(data)
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
@@ -392,7 +427,7 @@ defmodule TradingIndicators.Momentum.RSI do
   defp extract_single_price(%{} = data_point, source) do
     Map.fetch!(data_point, source)
   end
-  
+
   defp extract_single_price(price, _source) when Decimal.is_decimal(price) do
     price
   end
@@ -405,38 +440,41 @@ defmodule TradingIndicators.Momentum.RSI do
     # Calculate price changes (gains and losses)
     changes = calculate_price_changes(prices)
     {gains, losses} = split_gains_losses(changes)
-    
+
     # Calculate RSI values
     rsi_values = calculate_rsi_series(gains, losses, period, smoothing)
-    
+
     # Build result structures
     results = build_rsi_results(rsi_values, period, smoothing, overbought, oversold, original_data)
-    
+
     {:ok, results}
   end
 
   defp calculate_price_changes([_]), do: []
+
   defp calculate_price_changes([first | rest]) do
     Enum.zip([first | rest], rest)
     |> Enum.map(fn {prev, curr} -> Decimal.sub(curr, prev) end)
   end
 
   defp split_gains_losses(changes) do
-    gains = Enum.map(changes, fn change ->
-      if Decimal.gt?(change, Decimal.new("0")), do: change, else: Decimal.new("0")
-    end)
-    
-    losses = Enum.map(changes, fn change ->
-      if Decimal.lt?(change, Decimal.new("0")), do: Decimal.abs(change), else: Decimal.new("0")
-    end)
-    
+    gains =
+      Enum.map(changes, fn change ->
+        if Decimal.gt?(change, Decimal.new("0")), do: change, else: Decimal.new("0")
+      end)
+
+    losses =
+      Enum.map(changes, fn change ->
+        if Decimal.lt?(change, Decimal.new("0")), do: Decimal.abs(change), else: Decimal.new("0")
+      end)
+
     {gains, losses}
   end
 
   defp calculate_rsi_series(gains, losses, period, smoothing) do
     gain_windows = Utils.sliding_window(gains, period)
     loss_windows = Utils.sliding_window(losses, period)
-    
+
     Enum.zip(gain_windows, loss_windows)
     |> Enum.with_index()
     |> Enum.map(fn {{gain_window, loss_window}, index} ->
@@ -448,8 +486,10 @@ defmodule TradingIndicators.Momentum.RSI do
       else
         # Subsequent calculations - use smoothing method
         case smoothing do
-          :wilder -> calculate_wilder_rsi(gains, losses, period, index)
-          :sma -> 
+          :wilder ->
+            calculate_wilder_rsi(gains, losses, period, index)
+
+          :sma ->
             avg_gain = Utils.mean(gain_window)
             avg_loss = Utils.mean(loss_window)
             calculate_rsi_value(avg_gain, avg_loss)
@@ -463,19 +503,22 @@ defmodule TradingIndicators.Momentum.RSI do
     # This is a simplified version - for proper Wilder's smoothing,
     # we'd need to track running averages
     start_idx = max(0, index + 1 - period)
-    
+
     recent_gains = Enum.slice(gains, start_idx, period)
     recent_losses = Enum.slice(losses, start_idx, period)
-    
+
     avg_gain = Utils.mean(recent_gains)
     avg_loss = Utils.mean(recent_losses)
-    
+
     calculate_rsi_value(avg_gain, avg_loss)
   end
 
   defp calculate_rsi_value(avg_gain, avg_loss) do
     case Decimal.equal?(avg_loss, Decimal.new("0")) do
-      true -> Decimal.new("100.0")  # Avoid division by zero
+      # Avoid division by zero
+      true ->
+        Decimal.new("100.0")
+
       false ->
         rs = Decimal.div(avg_gain, avg_loss)
         one_plus_rs = Decimal.add(Decimal.new("1"), rs)
@@ -487,10 +530,11 @@ defmodule TradingIndicators.Momentum.RSI do
 
   defp build_rsi_results(rsi_values, period, smoothing, overbought, oversold, original_data) do
     rsi_values
-    |> Enum.with_index(period)  # Start from period index (after period + 1 data points)
+    # Start from period index (after period + 1 data points)
+    |> Enum.with_index(period)
     |> Enum.map(fn {rsi_value, index} ->
       timestamp = get_data_timestamp(original_data, index)
-      
+
       %{
         value: rsi_value,
         timestamp: timestamp,
@@ -509,7 +553,7 @@ defmodule TradingIndicators.Momentum.RSI do
   defp determine_rsi_signal(rsi_value, overbought, oversold) do
     overbought_decimal = Decimal.new(overbought)
     oversold_decimal = Decimal.new(oversold)
-    
+
     cond do
       Decimal.gt?(rsi_value, overbought_decimal) -> :overbought
       Decimal.lt?(rsi_value, oversold_decimal) -> :oversold
@@ -530,7 +574,7 @@ defmodule TradingIndicators.Momentum.RSI do
 
   defp update_buffer(buffer, new_value, max_size) do
     updated_buffer = buffer ++ [new_value]
-    
+
     if length(updated_buffer) > max_size do
       Enum.take(updated_buffer, -max_size)
     else
@@ -538,41 +582,52 @@ defmodule TradingIndicators.Momentum.RSI do
     end
   end
 
-  defp calculate_streaming_rsi(gains, losses, prev_avg_gain, prev_avg_loss, period, smoothing, 
-                               overbought, oversold, count, data_point) do
+  defp calculate_streaming_rsi(
+         gains,
+         losses,
+         prev_avg_gain,
+         prev_avg_loss,
+         period,
+         smoothing,
+         overbought,
+         oversold,
+         count,
+         data_point
+       ) do
     if count < period + 1 do
       # Not enough data yet
       {prev_avg_gain, prev_avg_loss, nil}
     else
       # Calculate new averages
-      {new_avg_gain, new_avg_loss} = case smoothing do
-        :wilder when prev_avg_gain != nil and prev_avg_loss != nil ->
-          # Wilder's smoothing: ((previous_avg * (n-1)) + current_value) / n
-          current_gain = List.last(gains) || Decimal.new("0")
-          current_loss = List.last(losses) || Decimal.new("0")
-          
-          period_decimal = Decimal.new(period)
-          period_minus_one = Decimal.sub(period_decimal, Decimal.new("1"))
-          
-          gain_part = Decimal.mult(prev_avg_gain, period_minus_one)
-          new_avg_gain = Decimal.div(Decimal.add(gain_part, current_gain), period_decimal)
-          
-          loss_part = Decimal.mult(prev_avg_loss, period_minus_one)
-          new_avg_loss = Decimal.div(Decimal.add(loss_part, current_loss), period_decimal)
-          
-          {new_avg_gain, new_avg_loss}
-          
-        _ ->
-          # Simple moving average or first calculation
-          recent_gains = Enum.take(gains, -period)
-          recent_losses = Enum.take(losses, -period)
-          {Utils.mean(recent_gains), Utils.mean(recent_losses)}
-      end
-      
+      {new_avg_gain, new_avg_loss} =
+        case smoothing do
+          :wilder when prev_avg_gain != nil and prev_avg_loss != nil ->
+            # Wilder's smoothing: ((previous_avg * (n-1)) + current_value) / n
+            current_gain = List.last(gains) || Decimal.new("0")
+            current_loss = List.last(losses) || Decimal.new("0")
+
+            period_decimal = Decimal.new(period)
+            period_minus_one = Decimal.sub(period_decimal, Decimal.new("1"))
+
+            gain_part = Decimal.mult(prev_avg_gain, period_minus_one)
+            new_avg_gain = Decimal.div(Decimal.add(gain_part, current_gain), period_decimal)
+
+            loss_part = Decimal.mult(prev_avg_loss, period_minus_one)
+            new_avg_loss = Decimal.div(Decimal.add(loss_part, current_loss), period_decimal)
+
+            {new_avg_gain, new_avg_loss}
+
+          _ ->
+            # Simple moving average or first calculation
+            recent_gains = Enum.take(gains, -period)
+            recent_losses = Enum.take(losses, -period)
+            {Utils.mean(recent_gains), Utils.mean(recent_losses)}
+        end
+
       # Calculate RSI
       rsi_value = calculate_rsi_value(new_avg_gain, new_avg_loss)
       timestamp = get_timestamp(data_point)
-      
+
       result = %{
         value: rsi_value,
         timestamp: timestamp,
@@ -585,7 +640,7 @@ defmodule TradingIndicators.Momentum.RSI do
           signal: determine_rsi_signal(rsi_value, overbought, oversold)
         }
       }
-      
+
       {new_avg_gain, new_avg_loss, result}
     end
   end

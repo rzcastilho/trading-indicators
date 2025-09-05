@@ -6,10 +6,34 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
   doctest ChaikinMoneyFlow
 
   @test_data [
-    %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-    %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]},
-    %{high: Decimal.new("108"), low: Decimal.new("104"), close: Decimal.new("105"), volume: 800, timestamp: ~U[2024-01-01 09:32:00Z]},
-    %{high: Decimal.new("109"), low: Decimal.new("103"), close: Decimal.new("107"), volume: 1200, timestamp: ~U[2024-01-01 09:33:00Z]}
+    %{
+      high: Decimal.new("105"),
+      low: Decimal.new("99"),
+      close: Decimal.new("103"),
+      volume: 1000,
+      timestamp: ~U[2024-01-01 09:30:00Z]
+    },
+    %{
+      high: Decimal.new("107"),
+      low: Decimal.new("102"),
+      close: Decimal.new("106"),
+      volume: 1500,
+      timestamp: ~U[2024-01-01 09:31:00Z]
+    },
+    %{
+      high: Decimal.new("108"),
+      low: Decimal.new("104"),
+      close: Decimal.new("105"),
+      volume: 800,
+      timestamp: ~U[2024-01-01 09:32:00Z]
+    },
+    %{
+      high: Decimal.new("109"),
+      low: Decimal.new("103"),
+      close: Decimal.new("107"),
+      volume: 1200,
+      timestamp: ~U[2024-01-01 09:33:00Z]
+    }
   ]
 
   describe "calculate/2" do
@@ -21,20 +45,40 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
       # Should get results for the last 6 periods (25 - 20 + 1)
       assert length(results) == 6
-      
+
       # All results should be valid CMF values between -1 and 1
       Enum.each(results, fn result ->
         assert Decimal.is_decimal(result.value)
-        assert Decimal.compare(result.value, Decimal.new("-1")) != :lt  # >= -1
-        assert Decimal.compare(result.value, Decimal.new("1")) != :gt   # <= 1
+        # >= -1
+        assert Decimal.compare(result.value, Decimal.new("-1")) != :lt
+        # <= 1
+        assert Decimal.compare(result.value, Decimal.new("1")) != :gt
       end)
     end
 
     test "calculates CMF correctly with custom period" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]},
-        %{high: Decimal.new("108"), low: Decimal.new("104"), close: Decimal.new("105"), volume: 800, timestamp: ~U[2024-01-01 09:32:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("106"),
+          volume: 1500,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        },
+        %{
+          high: Decimal.new("108"),
+          low: Decimal.new("104"),
+          close: Decimal.new("105"),
+          volume: 800,
+          timestamp: ~U[2024-01-01 09:32:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 2)
@@ -63,8 +107,20 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "handles equal high and low prices (no price range)" do
       data = [
-        %{high: Decimal.new("100"), low: Decimal.new("100"), close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("102"), low: Decimal.new("101"), close: Decimal.new("101"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          high: Decimal.new("100"),
+          low: Decimal.new("100"),
+          close: Decimal.new("100"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("102"),
+          low: Decimal.new("101"),
+          close: Decimal.new("101"),
+          volume: 1500,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 2)
@@ -81,8 +137,20 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "handles close at high (bullish signal)" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("105"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("107"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("105"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("107"),
+          volume: 1500,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 2)
@@ -95,8 +163,20 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "handles close at low (bearish signal)" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("99"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("102"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("99"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("102"),
+          volume: 1500,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 2)
@@ -109,9 +189,27 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "handles zero volume periods" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 0, timestamp: ~U[2024-01-01 09:31:00Z]},
-        %{high: Decimal.new("108"), low: Decimal.new("104"), close: Decimal.new("105"), volume: 800, timestamp: ~U[2024-01-01 09:32:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("106"),
+          volume: 0,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        },
+        %{
+          high: Decimal.new("108"),
+          low: Decimal.new("104"),
+          close: Decimal.new("105"),
+          volume: 800,
+          timestamp: ~U[2024-01-01 09:32:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 3)
@@ -142,48 +240,77 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
     end
 
     test "returns error or empty results for insufficient data" do
-      assert {:error, %TradingIndicators.Errors.InsufficientData{}} = 
-        ChaikinMoneyFlow.calculate([], period: 1)
+      assert {:error, %TradingIndicators.Errors.InsufficientData{}} =
+               ChaikinMoneyFlow.calculate([], period: 1)
 
-      assert {:error, %TradingIndicators.Errors.InsufficientData{}} = 
-        ChaikinMoneyFlow.calculate(@test_data |> Enum.take(1), period: 2)
+      assert {:error, %TradingIndicators.Errors.InsufficientData{}} =
+               ChaikinMoneyFlow.calculate(@test_data |> Enum.take(1), period: 2)
     end
 
     test "returns error for insufficient data with default period" do
-      assert {:error, %TradingIndicators.Errors.InsufficientData{}} = 
-        ChaikinMoneyFlow.calculate(@test_data, [])  # Only 4 data points, need 20
+      # Only 4 data points, need 20
+      assert {:error, %TradingIndicators.Errors.InsufficientData{}} =
+               ChaikinMoneyFlow.calculate(@test_data, [])
     end
 
     test "returns error for invalid period" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        ChaikinMoneyFlow.calculate(@test_data, period: 0)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               ChaikinMoneyFlow.calculate(@test_data, period: 0)
 
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        ChaikinMoneyFlow.calculate(@test_data, period: -1)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               ChaikinMoneyFlow.calculate(@test_data, period: -1)
     end
 
     test "returns error for invalid data format" do
       invalid_data = [%{price: Decimal.new("100"), vol: 1000}]
-      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} = 
-        ChaikinMoneyFlow.calculate(invalid_data, period: 1)
+
+      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} =
+               ChaikinMoneyFlow.calculate(invalid_data, period: 1)
     end
 
     test "returns error for negative prices" do
-      invalid_data = [%{high: Decimal.new("-105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
-      assert {:error, %TradingIndicators.Errors.ValidationError{}} = 
-        ChaikinMoneyFlow.calculate(invalid_data, period: 1)
+      invalid_data = [
+        %{
+          high: Decimal.new("-105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        }
+      ]
+
+      assert {:error, %TradingIndicators.Errors.ValidationError{}} =
+               ChaikinMoneyFlow.calculate(invalid_data, period: 1)
     end
 
     test "returns error for negative volume" do
-      invalid_data = [%{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: -1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
-      assert {:error, %TradingIndicators.Errors.ValidationError{}} = 
-        ChaikinMoneyFlow.calculate(invalid_data, period: 1)
+      invalid_data = [
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: -1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        }
+      ]
+
+      assert {:error, %TradingIndicators.Errors.ValidationError{}} =
+               ChaikinMoneyFlow.calculate(invalid_data, period: 1)
     end
 
     test "returns error for high < low" do
-      invalid_data = [%{high: Decimal.new("99"), low: Decimal.new("105"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
-      assert {:error, %TradingIndicators.Errors.ValidationError{}} = 
-        ChaikinMoneyFlow.calculate(invalid_data, period: 1)
+      invalid_data = [
+        %{
+          high: Decimal.new("99"),
+          low: Decimal.new("105"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        }
+      ]
+
+      assert {:error, %TradingIndicators.Errors.ValidationError{}} =
+               ChaikinMoneyFlow.calculate(invalid_data, period: 1)
     end
   end
 
@@ -191,23 +318,24 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
     test "accepts valid period" do
       assert :ok == ChaikinMoneyFlow.validate_params(period: 1)
       assert :ok == ChaikinMoneyFlow.validate_params(period: 20)
-      assert :ok == ChaikinMoneyFlow.validate_params([])  # Uses default
+      # Uses default
+      assert :ok == ChaikinMoneyFlow.validate_params([])
     end
 
     test "rejects invalid period" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        ChaikinMoneyFlow.validate_params(period: 0)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               ChaikinMoneyFlow.validate_params(period: 0)
 
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        ChaikinMoneyFlow.validate_params(period: -1)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               ChaikinMoneyFlow.validate_params(period: -1)
 
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        ChaikinMoneyFlow.validate_params(period: "invalid")
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               ChaikinMoneyFlow.validate_params(period: "invalid")
     end
 
     test "rejects non-keyword list options" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        ChaikinMoneyFlow.validate_params("invalid")
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               ChaikinMoneyFlow.validate_params("invalid")
     end
   end
 
@@ -234,26 +362,48 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "update_state/2 handles first data point" do
       state = ChaikinMoneyFlow.init_state(period: 2)
-      data_point = %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}
+
+      data_point = %{
+        high: Decimal.new("105"),
+        low: Decimal.new("99"),
+        close: Decimal.new("103"),
+        volume: 1000,
+        timestamp: ~U[2024-01-01 09:30:00Z]
+      }
 
       {:ok, new_state, result} = ChaikinMoneyFlow.update_state(state, data_point)
 
       assert length(new_state.money_flow_volumes) == 1
       assert length(new_state.volumes) == 1
       assert new_state.count == 1
-      assert result == nil  # Insufficient data for period=2
+      # Insufficient data for period=2
+      assert result == nil
     end
 
     test "update_state/2 handles sufficient data" do
       state = ChaikinMoneyFlow.init_state(period: 2)
 
       # Add first data point
-      data_point1 = %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}
+      data_point1 = %{
+        high: Decimal.new("105"),
+        low: Decimal.new("99"),
+        close: Decimal.new("103"),
+        volume: 1000,
+        timestamp: ~U[2024-01-01 09:30:00Z]
+      }
+
       {:ok, state1, result1} = ChaikinMoneyFlow.update_state(state, data_point1)
       assert result1 == nil
 
       # Add second data point
-      data_point2 = %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]}
+      data_point2 = %{
+        high: Decimal.new("107"),
+        low: Decimal.new("102"),
+        close: Decimal.new("106"),
+        volume: 1500,
+        timestamp: ~U[2024-01-01 09:31:00Z]
+      }
+
       {:ok, state2, result2} = ChaikinMoneyFlow.update_state(state1, data_point2)
 
       assert length(state2.money_flow_volumes) == 2
@@ -272,12 +422,30 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
       # Add three data points
       data_points = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]},
-        %{high: Decimal.new("108"), low: Decimal.new("104"), close: Decimal.new("105"), volume: 800, timestamp: ~U[2024-01-01 09:32:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("106"),
+          volume: 1500,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        },
+        %{
+          high: Decimal.new("108"),
+          low: Decimal.new("104"),
+          close: Decimal.new("105"),
+          volume: 800,
+          timestamp: ~U[2024-01-01 09:32:00Z]
+        }
       ]
 
-      final_state = 
+      final_state =
         data_points
         |> Enum.reduce(state, fn data_point, acc_state ->
           {:ok, new_state, _result} = ChaikinMoneyFlow.update_state(acc_state, data_point)
@@ -292,26 +460,45 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "update_state/2 handles invalid state" do
       invalid_state = %{invalid: true}
-      data_point = %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}
 
-      assert {:error, %TradingIndicators.Errors.StreamStateError{}} = 
-        ChaikinMoneyFlow.update_state(invalid_state, data_point)
+      data_point = %{
+        high: Decimal.new("105"),
+        low: Decimal.new("99"),
+        close: Decimal.new("103"),
+        volume: 1000,
+        timestamp: ~U[2024-01-01 09:30:00Z]
+      }
+
+      assert {:error, %TradingIndicators.Errors.StreamStateError{}} =
+               ChaikinMoneyFlow.update_state(invalid_state, data_point)
     end
 
     test "update_state/2 handles invalid data point" do
       state = ChaikinMoneyFlow.init_state(period: 2)
       invalid_data = %{price: 100, vol: 1000}
 
-      assert {:error, %TradingIndicators.Errors.StreamStateError{}} = 
-        ChaikinMoneyFlow.update_state(state, invalid_data)
+      assert {:error, %TradingIndicators.Errors.StreamStateError{}} =
+               ChaikinMoneyFlow.update_state(state, invalid_data)
     end
   end
 
   describe "edge cases and robustness" do
     test "handles large volume numbers" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 10_000_000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 20_000_000, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 10_000_000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("106"),
+          volume: 20_000_000,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 2)
@@ -326,8 +513,20 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "handles precise decimal calculations" do
       data = [
-        %{high: Decimal.new("105.123456"), low: Decimal.new("99.123456"), close: Decimal.new("103.123456"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107.654321"), low: Decimal.new("102.654321"), close: Decimal.new("106.654321"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          high: Decimal.new("105.123456"),
+          low: Decimal.new("99.123456"),
+          close: Decimal.new("103.123456"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107.654321"),
+          low: Decimal.new("102.654321"),
+          close: Decimal.new("106.654321"),
+          volume: 1500,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 2)
@@ -340,8 +539,20 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "handles all zero volume periods" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 0, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 0, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 0,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("106"),
+          volume: 0,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 2)
@@ -354,8 +565,20 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
     test "handles period of 1" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("106"),
+          volume: 1500,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
 
       {:ok, results} = ChaikinMoneyFlow.calculate(data, period: 1)
@@ -380,6 +603,7 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
     1..count
     |> Enum.map(fn i ->
       base = 100 + i
+
       %{
         high: Decimal.new("#{base + 2}"),
         low: Decimal.new("#{base - 2}"),

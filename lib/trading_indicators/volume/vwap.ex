@@ -97,15 +97,14 @@ defmodule TradingIndicators.Volume.VWAP do
       {:ok, result} = VWAP.calculate(data, variant: :typical, session_reset: :daily)
   """
   @impl true
-  @spec calculate(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          variant <- Keyword.get(opts, :variant, @default_variant),
          session_reset <- Keyword.get(opts, :session_reset, @default_session_reset),
          :ok <- Utils.validate_data_length(data, 1),
          :ok <- validate_ohlcv_data(data, variant) do
-      
       calculate_vwap_values(data, variant, session_reset)
     end
   end
@@ -135,12 +134,13 @@ defmodule TradingIndicators.Volume.VWAP do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -210,27 +210,34 @@ defmodule TradingIndicators.Volume.VWAP do
       {:ok, new_state, result} = VWAP.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{variant: variant, session_reset: session_reset, 
-                     cumulative_price_volume: cum_pv, cumulative_volume: cum_vol,
-                     current_session_start: session_start, count: count} = _state, 
-                   data_point) do
-    
+  @spec update_state(map(), Types.ohlcv()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{
+          variant: variant,
+          session_reset: session_reset,
+          cumulative_price_volume: cum_pv,
+          cumulative_volume: cum_vol,
+          current_session_start: session_start,
+          count: count
+        } = _state,
+        data_point
+      ) do
     try do
       # Validate the data point
       with :ok <- validate_single_ohlcv_data(data_point, variant) do
         timestamp = get_timestamp(data_point)
-        
+
         # Check if we need to reset for new session
         should_reset = should_reset_session?(session_reset, session_start, timestamp)
-        
-        {new_cum_pv, new_cum_vol, new_session_start} = if should_reset do
-          {Decimal.new("0"), Decimal.new("0"), get_session_start(session_reset, timestamp)}
-        else
-          {cum_pv, cum_vol, session_start || get_session_start(session_reset, timestamp)}
-        end
-        
+
+        {new_cum_pv, new_cum_vol, new_session_start} =
+          if should_reset do
+            {Decimal.new("0"), Decimal.new("0"), get_session_start(session_reset, timestamp)}
+          else
+            {cum_pv, cum_vol, session_start || get_session_start(session_reset, timestamp)}
+          end
+
         # Skip zero volume periods
         if data_point.volume == 0 do
           new_state = %{
@@ -241,24 +248,25 @@ defmodule TradingIndicators.Volume.VWAP do
             current_session_start: new_session_start,
             count: count + 1
           }
-          
+
           {:ok, new_state, nil}
         else
           # Calculate price based on variant
           price = calculate_price_by_variant(data_point, variant)
           volume_decimal = Decimal.new(data_point.volume)
-          
+
           # Update cumulative values
           price_volume = Decimal.mult(price, volume_decimal)
           final_cum_pv = Decimal.add(new_cum_pv, price_volume)
           final_cum_vol = Decimal.add(new_cum_vol, volume_decimal)
-          
+
           # Calculate VWAP
-          vwap = if Decimal.positive?(final_cum_vol) do
-            Decimal.div(final_cum_pv, final_cum_vol)
-          else
-            Decimal.new("0")
-          end
+          vwap =
+            if Decimal.positive?(final_cum_vol) do
+              Decimal.div(final_cum_pv, final_cum_vol)
+            else
+              Decimal.new("0")
+            end
 
           new_state = %{
             variant: variant,
@@ -292,36 +300,44 @@ defmodule TradingIndicators.Volume.VWAP do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for VWAP streaming or data point missing required fields",
-      operation: :update_state,
-      reason: "malformed state or invalid data point"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for VWAP streaming or data point missing required fields",
+       operation: :update_state,
+       reason: "malformed state or invalid data point"
+     }}
   end
 
   # Private functions
 
   defp validate_variant(variant) when variant in [:close, :typical, :weighted], do: :ok
+
   defp validate_variant(variant) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid VWAP variant: #{inspect(variant)}",
-      param: :variant,
-      value: variant,
-      expected: "one of [:close, :typical, :weighted]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid VWAP variant: #{inspect(variant)}",
+       param: :variant,
+       value: variant,
+       expected: "one of [:close, :typical, :weighted]"
+     }}
   end
 
-  defp validate_session_reset(session_reset) when session_reset in [:none, :daily, :weekly, :monthly], do: :ok
+  defp validate_session_reset(session_reset)
+       when session_reset in [:none, :daily, :weekly, :monthly],
+       do: :ok
+
   defp validate_session_reset(session_reset) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid session reset: #{inspect(session_reset)}",
-      param: :session_reset,
-      value: session_reset,
-      expected: "one of [:none, :daily, :weekly, :monthly]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid session reset: #{inspect(session_reset)}",
+       param: :session_reset,
+       value: session_reset,
+       expected: "one of [:none, :daily, :weekly, :monthly]"
+     }}
   end
 
   defp validate_ohlcv_data([], _variant), do: :ok
+
   defp validate_ohlcv_data(data, variant) do
     Enum.reduce_while(data, :ok, fn data_point, _acc ->
       case validate_single_ohlcv_data(data_point, variant) do
@@ -338,29 +354,35 @@ defmodule TradingIndicators.Volume.VWAP do
       case variant do
         :close ->
           validate_close_field(data_point)
+
         :typical ->
           validate_hlc_fields(data_point)
+
         :weighted ->
           validate_hlc_fields(data_point)
       end
     end
   end
+
   defp validate_single_ohlcv_data(invalid, _variant) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "VWAP requires data with volume field",
-      expected: "map with :volume key",
-      received: inspect(invalid)
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "VWAP requires data with volume field",
+       expected: "map with :volume key",
+       received: inspect(invalid)
+     }}
   end
 
   defp validate_volume(volume, _data_point) when is_integer(volume) and volume >= 0, do: :ok
+
   defp validate_volume(volume, data_point) do
-    {:error, %Errors.ValidationError{
-      message: "Volume must be a non-negative integer",
-      field: :volume,
-      value: volume,
-      constraint: "must be non-negative integer, got #{inspect(volume)} in #{inspect(data_point)}"
-    }}
+    {:error,
+     %Errors.ValidationError{
+       message: "Volume must be a non-negative integer",
+       field: :volume,
+       value: volume,
+       constraint: "must be non-negative integer, got #{inspect(volume)} in #{inspect(data_point)}"
+     }}
   end
 
   defp validate_close_field(%{close: close}) when is_struct(close, Decimal) do
@@ -370,63 +392,81 @@ defmodule TradingIndicators.Volume.VWAP do
       :ok
     end
   end
+
   defp validate_close_field(data_point) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "VWAP requires close field as Decimal",
-      expected: "map with :close key as Decimal",
-      received: inspect(data_point)
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "VWAP requires close field as Decimal",
+       expected: "map with :close key as Decimal",
+       received: inspect(data_point)
+     }}
   end
 
-  defp validate_hlc_fields(%{high: high, low: low, close: close}) 
+  defp validate_hlc_fields(%{high: high, low: low, close: close})
        when is_struct(high, Decimal) and is_struct(low, Decimal) and is_struct(close, Decimal) do
     cond do
-      Decimal.negative?(high) -> {:error, Errors.negative_price(:high, high)}
-      Decimal.negative?(low) -> {:error, Errors.negative_price(:low, low)}
-      Decimal.negative?(close) -> {:error, Errors.negative_price(:close, close)}
-      Decimal.gt?(low, high) -> 
-        {:error, %Errors.ValidationError{
-          message: "Low price cannot be greater than high price",
-          field: :low,
-          value: {low, high},
-          constraint: "low <= high"
-        }}
-      true -> :ok
+      Decimal.negative?(high) ->
+        {:error, Errors.negative_price(:high, high)}
+
+      Decimal.negative?(low) ->
+        {:error, Errors.negative_price(:low, low)}
+
+      Decimal.negative?(close) ->
+        {:error, Errors.negative_price(:close, close)}
+
+      Decimal.gt?(low, high) ->
+        {:error,
+         %Errors.ValidationError{
+           message: "Low price cannot be greater than high price",
+           field: :low,
+           value: {low, high},
+           constraint: "low <= high"
+         }}
+
+      true ->
+        :ok
     end
   end
+
   defp validate_hlc_fields(data_point) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "VWAP requires high, low, close fields as Decimals",
-      expected: "map with :high, :low, :close keys as Decimals",
-      received: inspect(data_point)
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "VWAP requires high, low, close fields as Decimals",
+       expected: "map with :high, :low, :close keys as Decimals",
+       received: inspect(data_point)
+     }}
   end
 
   defp get_timestamp(%{timestamp: timestamp}), do: timestamp
   defp get_timestamp(_), do: DateTime.utc_now()
 
   defp calculate_vwap_values([], _variant, _session_reset), do: {:ok, []}
+
   defp calculate_vwap_values(data, variant, session_reset) do
-    {results, _final_state} = 
+    {results, _final_state} =
       data
       |> Enum.reduce({[], nil}, fn data_point, {acc_results, state} ->
         # Initialize state on first iteration
-        current_state = state || %{
-          variant: variant,
-          session_reset: session_reset,
-          cumulative_price_volume: Decimal.new("0"),
-          cumulative_volume: Decimal.new("0"),
-          current_session_start: nil,
-          count: 0
-        }
-        
+        current_state =
+          state ||
+            %{
+              variant: variant,
+              session_reset: session_reset,
+              cumulative_price_volume: Decimal.new("0"),
+              cumulative_volume: Decimal.new("0"),
+              current_session_start: nil,
+              count: 0
+            }
+
         # Update state with current data point
         case update_state(current_state, data_point) do
           {:ok, new_state, result} when result != nil ->
             {[result | acc_results], new_state}
+
           {:ok, new_state, nil} ->
             # Zero volume period, no result
             {acc_results, new_state}
+
           {:error, _error} ->
             # Skip invalid data points
             {acc_results, current_state}
@@ -437,11 +477,13 @@ defmodule TradingIndicators.Volume.VWAP do
   end
 
   defp calculate_price_by_variant(data_point, :close), do: data_point.close
+
   defp calculate_price_by_variant(%{high: high, low: low, close: close}, :typical) do
     # Typical Price = (High + Low + Close) / 3
     sum = Decimal.add(high, Decimal.add(low, close))
     Decimal.div(sum, Decimal.new("3"))
   end
+
   defp calculate_price_by_variant(%{high: high, low: low, close: close}, :weighted) do
     # Weighted Price = (High + Low + 2*Close) / 4
     close_x2 = Decimal.mult(close, Decimal.new("2"))
@@ -451,26 +493,32 @@ defmodule TradingIndicators.Volume.VWAP do
 
   defp should_reset_session?(:none, _session_start, _timestamp), do: false
   defp should_reset_session?(_reset_type, nil, _timestamp), do: false
+
   defp should_reset_session?(reset_type, session_start, timestamp) do
     case reset_type do
       :daily ->
         Date.diff(DateTime.to_date(timestamp), DateTime.to_date(session_start)) > 0
+
       :weekly ->
         weeks_diff = div(Date.diff(DateTime.to_date(timestamp), DateTime.to_date(session_start)), 7)
         weeks_diff > 0
+
       :monthly ->
-        timestamp.year > session_start.year or 
-        (timestamp.year == session_start.year and timestamp.month > session_start.month)
+        timestamp.year > session_start.year or
+          (timestamp.year == session_start.year and timestamp.month > session_start.month)
+
       _ ->
         false
     end
   end
 
   defp get_session_start(:none, timestamp), do: timestamp
+
   defp get_session_start(:daily, timestamp) do
     # Start of day
     %{timestamp | hour: 0, minute: 0, second: 0, microsecond: {0, 6}}
   end
+
   defp get_session_start(:weekly, timestamp) do
     # Start of week (Monday)
     date = DateTime.to_date(timestamp)
@@ -478,6 +526,7 @@ defmodule TradingIndicators.Volume.VWAP do
     start_date = Date.add(date, -days_to_subtract)
     DateTime.new!(start_date, ~T[00:00:00.000000])
   end
+
   defp get_session_start(:monthly, timestamp) do
     # Start of month
     date = DateTime.to_date(timestamp)

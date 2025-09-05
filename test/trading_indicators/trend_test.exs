@@ -21,7 +21,7 @@ defmodule TradingIndicators.TrendTest do
   describe "available_indicators/0" do
     test "returns all trend indicator modules" do
       indicators = Trend.available_indicators()
-      
+
       assert SMA in indicators
       assert EMA in indicators
       assert WMA in indicators
@@ -36,7 +36,7 @@ defmodule TradingIndicators.TrendTest do
     test "calculates SMA through unified interface", %{data: data} do
       assert {:ok, results} = Trend.calculate(SMA, data, period: 3)
       assert length(results) == 3
-      
+
       first_result = List.first(results)
       assert first_result.metadata.indicator == "SMA"
     end
@@ -44,7 +44,7 @@ defmodule TradingIndicators.TrendTest do
     test "calculates EMA through unified interface", %{data: data} do
       assert {:ok, results} = Trend.calculate(EMA, data, period: 3)
       assert length(results) >= 1
-      
+
       first_result = List.first(results)
       assert first_result.metadata.indicator == "EMA"
     end
@@ -87,15 +87,16 @@ defmodule TradingIndicators.TrendTest do
 
     test "update_stream/2 works with SMA state", %{data: data} do
       state = Trend.init_stream(SMA, period: 3)
-      
+
       # Process data points
-      {final_state, final_result} = 
+      {final_state, final_result} =
         Enum.reduce(data, {state, nil}, fn data_point, {current_state, _prev} ->
           {:ok, new_state, result} = Trend.update_stream(current_state, data_point)
           {new_state, result}
         end)
-      
+
       assert final_state.count == length(data)
+
       if final_result do
         assert final_result.metadata.indicator == "SMA"
       end
@@ -104,7 +105,7 @@ defmodule TradingIndicators.TrendTest do
     test "update_stream/2 returns error for unknown state format" do
       invalid_state = %{unknown: "state"}
       data_point = %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]}
-      
+
       assert {:error, error} = Trend.update_stream(invalid_state, data_point)
       assert error.operation == :update_stream
     end
@@ -113,7 +114,7 @@ defmodule TradingIndicators.TrendTest do
   describe "indicator_info/1" do
     test "returns info for SMA" do
       info = Trend.indicator_info(SMA)
-      
+
       assert info.module == SMA
       assert info.name == "SMA"
       assert info.required_periods == 20
@@ -129,7 +130,7 @@ defmodule TradingIndicators.TrendTest do
   describe "all_indicators_info/0" do
     test "returns info for all indicators" do
       all_info = Trend.all_indicators_info()
-      
+
       assert length(all_info) == 6
       assert Enum.all?(all_info, fn info -> Map.has_key?(info, :module) end)
       assert Enum.all?(all_info, fn info -> Map.has_key?(info, :name) end)

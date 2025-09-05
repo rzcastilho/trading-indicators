@@ -7,7 +7,7 @@ defmodule TradingIndicators.MomentumTest do
   describe "available_indicators/0" do
     test "returns list of all momentum indicator modules" do
       indicators = Momentum.available_indicators()
-      
+
       assert length(indicators) == 6
       assert RSI in indicators
       assert Stochastic in indicators
@@ -21,25 +21,65 @@ defmodule TradingIndicators.MomentumTest do
   describe "calculate/3" do
     setup do
       data = [
-        %{open: Decimal.new("100"), high: Decimal.new("105"), low: Decimal.new("95"), close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{open: Decimal.new("100"), high: Decimal.new("107"), low: Decimal.new("97"), close: Decimal.new("102"), volume: 1200, timestamp: ~U[2024-01-01 09:31:00Z]},
-        %{open: Decimal.new("102"), high: Decimal.new("106"), low: Decimal.new("99"), close: Decimal.new("101"), volume: 1100, timestamp: ~U[2024-01-01 09:32:00Z]},
-        %{open: Decimal.new("101"), high: Decimal.new("108"), low: Decimal.new("98"), close: Decimal.new("103"), volume: 1300, timestamp: ~U[2024-01-01 09:33:00Z]},
-        %{open: Decimal.new("103"), high: Decimal.new("109"), low: Decimal.new("100"), close: Decimal.new("105"), volume: 1400, timestamp: ~U[2024-01-01 09:34:00Z]}
+        %{
+          open: Decimal.new("100"),
+          high: Decimal.new("105"),
+          low: Decimal.new("95"),
+          close: Decimal.new("100"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          open: Decimal.new("100"),
+          high: Decimal.new("107"),
+          low: Decimal.new("97"),
+          close: Decimal.new("102"),
+          volume: 1200,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        },
+        %{
+          open: Decimal.new("102"),
+          high: Decimal.new("106"),
+          low: Decimal.new("99"),
+          close: Decimal.new("101"),
+          volume: 1100,
+          timestamp: ~U[2024-01-01 09:32:00Z]
+        },
+        %{
+          open: Decimal.new("101"),
+          high: Decimal.new("108"),
+          low: Decimal.new("98"),
+          close: Decimal.new("103"),
+          volume: 1300,
+          timestamp: ~U[2024-01-01 09:33:00Z]
+        },
+        %{
+          open: Decimal.new("103"),
+          high: Decimal.new("109"),
+          low: Decimal.new("100"),
+          close: Decimal.new("105"),
+          volume: 1400,
+          timestamp: ~U[2024-01-01 09:34:00Z]
+        }
       ]
+
       %{data: data}
     end
 
     test "calculates RSI with valid indicator", %{data: data} do
       {:ok, results} = Momentum.calculate(RSI, data, period: 4)
       assert length(results) == 1
-      assert %{value: _value, timestamp: _timestamp, metadata: %{indicator: "RSI"}} = List.first(results)
+
+      assert %{value: _value, timestamp: _timestamp, metadata: %{indicator: "RSI"}} =
+               List.first(results)
     end
 
     test "calculates Stochastic with valid indicator", %{data: data} do
       {:ok, results} = Momentum.calculate(Stochastic, data, k_period: 3, d_period: 2)
       assert length(results) >= 1
-      assert %{value: %{k: _k_value, d: _d_value}, metadata: %{indicator: "Stochastic"}} = List.first(results)
+
+      assert %{value: %{k: _k_value, d: _d_value}, metadata: %{indicator: "Stochastic"}} =
+               List.first(results)
     end
 
     test "calculates Williams %R with valid indicator", %{data: data} do
@@ -76,13 +116,13 @@ defmodule TradingIndicators.MomentumTest do
   describe "init_stream/2" do
     test "initializes streaming state for RSI" do
       state = Momentum.init_stream(RSI, period: 14)
-      
+
       assert %{period: 14, source: :close, avg_gain: nil, avg_loss: nil} = state
     end
 
     test "initializes streaming state for Stochastic" do
       state = Momentum.init_stream(Stochastic, k_period: 14, d_period: 3)
-      
+
       assert %{k_period: 14, d_period: 3, highs: [], lows: [], closes: []} = state
     end
 
@@ -96,39 +136,42 @@ defmodule TradingIndicators.MomentumTest do
   describe "update_stream/2" do
     setup do
       data_point = %{
-        open: Decimal.new("100"), 
-        high: Decimal.new("105"), 
-        low: Decimal.new("95"), 
-        close: Decimal.new("100"), 
-        volume: 1000, 
+        open: Decimal.new("100"),
+        high: Decimal.new("105"),
+        low: Decimal.new("95"),
+        close: Decimal.new("100"),
+        volume: 1000,
         timestamp: ~U[2024-01-01 09:30:00Z]
       }
+
       %{data_point: data_point}
     end
 
     test "updates RSI streaming state", %{data_point: data_point} do
       state = Momentum.init_stream(RSI, period: 14)
-      
+
       {:ok, new_state, result} = Momentum.update_stream(state, data_point)
-      
+
       assert new_state.count == 1
-      assert is_nil(result)  # Not enough data yet
+      # Not enough data yet
+      assert is_nil(result)
     end
 
     test "updates Stochastic streaming state", %{data_point: data_point} do
       state = Momentum.init_stream(Stochastic, k_period: 3, d_period: 2)
-      
+
       {:ok, new_state, result} = Momentum.update_stream(state, data_point)
-      
+
       assert new_state.count == 1
       assert length(new_state.highs) == 1
-      assert is_nil(result)  # Not enough data yet
+      # Not enough data yet
+      assert is_nil(result)
     end
 
     test "returns error for unknown state format" do
       invalid_state = %{unknown: "state"}
       data_point = %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]}
-      
+
       {:error, error} = Momentum.update_stream(invalid_state, data_point)
       assert %TradingIndicators.Errors.StreamStateError{} = error
     end
@@ -137,12 +180,48 @@ defmodule TradingIndicators.MomentumTest do
   describe "convenience functions" do
     setup do
       data = [
-        %{open: Decimal.new("100"), high: Decimal.new("105"), low: Decimal.new("95"), close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{open: Decimal.new("100"), high: Decimal.new("107"), low: Decimal.new("97"), close: Decimal.new("102"), volume: 1200, timestamp: ~U[2024-01-01 09:31:00Z]},
-        %{open: Decimal.new("102"), high: Decimal.new("106"), low: Decimal.new("99"), close: Decimal.new("101"), volume: 1100, timestamp: ~U[2024-01-01 09:32:00Z]},
-        %{open: Decimal.new("101"), high: Decimal.new("108"), low: Decimal.new("98"), close: Decimal.new("103"), volume: 1300, timestamp: ~U[2024-01-01 09:33:00Z]},
-        %{open: Decimal.new("103"), high: Decimal.new("109"), low: Decimal.new("100"), close: Decimal.new("105"), volume: 1400, timestamp: ~U[2024-01-01 09:34:00Z]}
+        %{
+          open: Decimal.new("100"),
+          high: Decimal.new("105"),
+          low: Decimal.new("95"),
+          close: Decimal.new("100"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          open: Decimal.new("100"),
+          high: Decimal.new("107"),
+          low: Decimal.new("97"),
+          close: Decimal.new("102"),
+          volume: 1200,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        },
+        %{
+          open: Decimal.new("102"),
+          high: Decimal.new("106"),
+          low: Decimal.new("99"),
+          close: Decimal.new("101"),
+          volume: 1100,
+          timestamp: ~U[2024-01-01 09:32:00Z]
+        },
+        %{
+          open: Decimal.new("101"),
+          high: Decimal.new("108"),
+          low: Decimal.new("98"),
+          close: Decimal.new("103"),
+          volume: 1300,
+          timestamp: ~U[2024-01-01 09:33:00Z]
+        },
+        %{
+          open: Decimal.new("103"),
+          high: Decimal.new("109"),
+          low: Decimal.new("100"),
+          close: Decimal.new("105"),
+          volume: 1400,
+          timestamp: ~U[2024-01-01 09:34:00Z]
+        }
       ]
+
       %{data: data}
     end
 
@@ -186,7 +265,7 @@ defmodule TradingIndicators.MomentumTest do
   describe "indicator_info/1" do
     test "returns information for valid indicator" do
       info = Momentum.indicator_info(RSI)
-      
+
       assert info.module == RSI
       assert info.name == "RSI"
       assert info.required_periods == 15
@@ -195,7 +274,7 @@ defmodule TradingIndicators.MomentumTest do
 
     test "returns error for invalid indicator" do
       info = Momentum.indicator_info(UnknownIndicator)
-      
+
       assert %{error: "Unknown indicator"} = info
     end
   end
@@ -203,7 +282,7 @@ defmodule TradingIndicators.MomentumTest do
   describe "all_indicators_info/0" do
     test "returns information for all indicators" do
       all_info = Momentum.all_indicators_info()
-      
+
       assert length(all_info) == 6
       assert Enum.all?(all_info, &Map.has_key?(&1, :module))
       assert Enum.all?(all_info, &Map.has_key?(&1, :name))

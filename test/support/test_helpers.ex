@@ -12,7 +12,7 @@ defmodule TradingIndicators.TestSupport.TestHelpers do
   def assert_decimal_equal(actual, expected, tolerance \\ "0.0001") do
     tolerance_decimal = Decimal.new(tolerance)
     diff = Decimal.abs(Decimal.sub(actual, expected))
-    
+
     if Decimal.gt?(diff, tolerance_decimal) do
       ExUnit.Assertions.flunk("""
       Values not equal within tolerance #{tolerance}
@@ -56,7 +56,8 @@ defmodule TradingIndicators.TestSupport.TestHelpers do
           ExUnit.Assertions.flunk("Expected #{expected_error} but got #{error.__struct__}")
         end
 
-        if expected_message_pattern && !String.contains?(Exception.message(error), expected_message_pattern) do
+        if expected_message_pattern &&
+             !String.contains?(Exception.message(error), expected_message_pattern) do
           ExUnit.Assertions.flunk("""
           Expected error message to contain "#{expected_message_pattern}"
           Actual message: "#{Exception.message(error)}"
@@ -111,7 +112,8 @@ defmodule TradingIndicators.TestSupport.TestHelpers do
   def validate_indicator_result(result, expected_length, value_constraints \\ []) do
     # Check structure
     assert is_list(result), "Result should be a list"
-    assert length(result) == expected_length, 
+
+    assert length(result) == expected_length,
            "Expected length #{expected_length}, got #{length(result)}"
 
     # Check all values are valid decimals
@@ -121,25 +123,25 @@ defmodule TradingIndicators.TestSupport.TestHelpers do
     Enum.each(value_constraints, fn
       {:min, min_val} ->
         Enum.each(result, fn val ->
-          assert Decimal.gte?(val, Decimal.new(min_val)), 
+          assert Decimal.gte?(val, Decimal.new(min_val)),
                  "Value #{val} should be >= #{min_val}"
         end)
-      
+
       {:max, max_val} ->
         Enum.each(result, fn val ->
-          assert Decimal.lte?(val, Decimal.new(max_val)), 
+          assert Decimal.lte?(val, Decimal.new(max_val)),
                  "Value #{val} should be <= #{max_val}"
         end)
-      
+
       {:positive} ->
         Enum.each(result, fn val ->
-          assert Decimal.gt?(val, Decimal.new("0")), 
+          assert Decimal.gt?(val, Decimal.new("0")),
                  "Value #{val} should be positive"
         end)
-      
+
       {:non_negative} ->
         Enum.each(result, fn val ->
-          assert Decimal.gte?(val, Decimal.new("0")), 
+          assert Decimal.gte?(val, Decimal.new("0")),
                  "Value #{val} should be non-negative"
         end)
     end)
@@ -151,12 +153,14 @@ defmodule TradingIndicators.TestSupport.TestHelpers do
   def create_statistical_test_data do
     # Create data with known mean and standard deviation
     base_values = [100, 102, 98, 105, 95, 103, 97, 108, 92, 106]
-    
+
     %{
       values: Enum.map(base_values, &Decimal.new/1),
       known_mean: Decimal.new("100.6"),
-      known_std: Decimal.new("5.46"), # Approximate
-      known_variance: Decimal.new("29.84") # Approximate
+      # Approximate
+      known_std: Decimal.new("5.46"),
+      # Approximate
+      known_variance: Decimal.new("29.84")
     }
   end
 
@@ -166,12 +170,12 @@ defmodule TradingIndicators.TestSupport.TestHelpers do
   def measure_memory_usage(fun) do
     :erlang.garbage_collect()
     initial_memory = :erlang.process_info(self(), :memory) |> elem(1)
-    
+
     result = fun.()
-    
+
     :erlang.garbage_collect()
     final_memory = :erlang.process_info(self(), :memory) |> elem(1)
-    
+
     memory_used = final_memory - initial_memory
     {result, memory_used}
   end
@@ -200,22 +204,23 @@ defmodule TradingIndicators.TestSupport.TestHelpers do
     # Basic consistency checks
     assert length(result) <= length(values), "Result cannot be longer than input"
     assert_all_finite(result)
-    
+
     # Check for reasonable bounds (indicator-specific)
     unless Enum.empty?(result) do
       min_input = Enum.min(values, Decimal)
       max_input = Enum.max(values, Decimal)
       min_result = Enum.min(result, Decimal)
       max_result = Enum.max(result, Decimal)
-      
+
       # Most indicators should produce results within reasonable bounds of input
       input_range = Decimal.sub(max_input, min_input)
       acceptable_lower = Decimal.sub(min_input, input_range)
       acceptable_upper = Decimal.add(max_input, input_range)
-      
-      assert Decimal.gte?(min_result, acceptable_lower), 
+
+      assert Decimal.gte?(min_result, acceptable_lower),
              "Minimum result #{min_result} outside acceptable range"
-      assert Decimal.lte?(max_result, acceptable_upper), 
+
+      assert Decimal.lte?(max_result, acceptable_upper),
              "Maximum result #{max_result} outside acceptable range"
     end
   end

@@ -97,8 +97,8 @@ defmodule TradingIndicators.Trend.MACD do
       {:ok, result} = MACD.calculate(data, fast_period: 8, slow_period: 21, signal_period: 5)
   """
   @impl true
-  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          fast_period <- Keyword.get(opts, :fast_period, @default_fast_period),
@@ -106,7 +106,6 @@ defmodule TradingIndicators.Trend.MACD do
          signal_period <- Keyword.get(opts, :signal_period, @default_signal_period),
          source <- Keyword.get(opts, :source, :close),
          :ok <- Utils.validate_data_length(data, slow_period) do
-      
       calculate_macd_values(data, fast_period, slow_period, signal_period, source)
     end
   end
@@ -141,12 +140,13 @@ defmodule TradingIndicators.Trend.MACD do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -217,7 +217,8 @@ defmodule TradingIndicators.Trend.MACD do
       source: source,
       fast_ema_state: EMA.init_state(period: fast_period, source: source),
       slow_ema_state: EMA.init_state(period: slow_period, source: source),
-      signal_ema_state: EMA.init_state(period: signal_period, source: :close),  # Signal always uses MACD values
+      # Signal always uses MACD values
+      signal_ema_state: EMA.init_state(period: signal_period, source: :close),
       macd_values: [],
       count: 0
     }
@@ -244,23 +245,25 @@ defmodule TradingIndicators.Trend.MACD do
       {:ok, new_state, result} = MACD.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{
-    fast_period: fast_period,
-    slow_period: slow_period,
-    signal_period: signal_period,
-    source: source,
-    fast_ema_state: fast_ema_state,
-    slow_ema_state: slow_ema_state,
-    signal_ema_state: signal_ema_state,
-    macd_values: macd_values,
-    count: count
-  } = _state, data_point) do
-    
+  @spec update_state(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{
+          fast_period: fast_period,
+          slow_period: slow_period,
+          signal_period: signal_period,
+          source: source,
+          fast_ema_state: fast_ema_state,
+          slow_ema_state: slow_ema_state,
+          signal_ema_state: signal_ema_state,
+          macd_values: macd_values,
+          count: count
+        } = _state,
+        data_point
+      ) do
     try do
       new_count = count + 1
-      
+
       # Update both EMA states
       {:ok, new_fast_ema_state, fast_ema_result} = EMA.update_state(fast_ema_state, data_point)
       {:ok, new_slow_ema_state, slow_ema_result} = EMA.update_state(slow_ema_state, data_point)
@@ -269,18 +272,18 @@ defmodule TradingIndicators.Trend.MACD do
         {%{value: fast_value}, %{value: slow_value}} ->
           # Calculate MACD line
           macd_line = Decimal.sub(fast_value, slow_value)
-          
+
           # Create synthetic data point for signal EMA (MACD line as "close" price)
           timestamp = get_timestamp(data_point)
           macd_data_point = %{close: macd_line, timestamp: timestamp}
-          
+
           # Update signal EMA state with MACD value
-          {:ok, new_signal_ema_state, signal_result} = 
+          {:ok, new_signal_ema_state, signal_result} =
             EMA.update_state(signal_ema_state, macd_data_point)
-          
+
           # Build result
           result_value = build_macd_result(macd_line, signal_result)
-          
+
           result = %{
             value: result_value,
             timestamp: timestamp,
@@ -316,7 +319,8 @@ defmodule TradingIndicators.Trend.MACD do
             source: source,
             fast_ema_state: new_fast_ema_state,
             slow_ema_state: new_slow_ema_state,
-            signal_ema_state: signal_ema_state,  # Unchanged since no MACD yet
+            # Unchanged since no MACD yet
+            signal_ema_state: signal_ema_state,
             macd_values: macd_values,
             count: new_count
           }
@@ -329,71 +333,84 @@ defmodule TradingIndicators.Trend.MACD do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for MACD streaming",
-      operation: :update_state,
-      reason: "malformed state"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for MACD streaming",
+       operation: :update_state,
+       reason: "malformed state"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period, _name) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period, name) do
-    {:error, %Errors.InvalidParams{
-      message: "#{String.capitalize(to_string(name))} must be a positive integer, got #{inspect(period)}",
-      param: name,
-      value: period,
-      expected: "positive integer"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message:
+         "#{String.capitalize(to_string(name))} must be a positive integer, got #{inspect(period)}",
+       param: name,
+       value: period,
+       expected: "positive integer"
+     }}
   end
 
   defp validate_period_relationship(fast_period, slow_period) do
     if fast_period < slow_period do
       :ok
     else
-      {:error, %Errors.InvalidParams{
-        message: "Fast period (#{fast_period}) must be less than slow period (#{slow_period})",
-        param: :period_relationship,
-        value: {fast_period, slow_period},
-        expected: "fast_period < slow_period"
-      }}
+      {:error,
+       %Errors.InvalidParams{
+         message: "Fast period (#{fast_period}) must be less than slow period (#{slow_period})",
+         param: :period_relationship,
+         value: {fast_period, slow_period},
+         expected: "fast_period < slow_period"
+       }}
     end
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid source: #{inspect(source)}",
-      param: :source,
-      value: source,
-      expected: "one of [:open, :high, :low, :close]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid source: #{inspect(source)}",
+       param: :source,
+       value: source,
+       expected: "one of [:open, :high, :low, :close]"
+     }}
   end
 
   defp calculate_macd_values(data, fast_period, slow_period, signal_period, source) do
     # Calculate fast and slow EMAs
     with {:ok, fast_ema_results} <- EMA.calculate(data, period: fast_period, source: source),
          {:ok, slow_ema_results} <- EMA.calculate(data, period: slow_period, source: source) do
-      
       # Align EMAs - we need both to exist for the same timestamp
       aligned_emas = align_ema_results(fast_ema_results, slow_ema_results)
-      
+
       # Calculate MACD line for each aligned pair
       macd_lines = calculate_macd_lines(aligned_emas)
-      
+
       # Calculate signal line from MACD values
       signal_results = calculate_signal_line(macd_lines, signal_period)
-      
+
       # Combine MACD and signal to create final results
-      combine_macd_signal_results(macd_lines, signal_results, fast_period, slow_period, signal_period, source)
+      combine_macd_signal_results(
+        macd_lines,
+        signal_results,
+        fast_period,
+        slow_period,
+        signal_period,
+        source
+      )
     end
   end
 
   defp align_ema_results(fast_results, slow_results) do
     # Create map for fast lookup by timestamp
     fast_map = Map.new(fast_results, fn result -> {result.timestamp, result.value} end)
-    
+
     # Find matching timestamps in slow results
     slow_results
     |> Enum.filter(fn slow_result ->
@@ -414,61 +431,73 @@ defmodule TradingIndicators.Trend.MACD do
 
   defp calculate_signal_line(macd_lines, signal_period) do
     # Convert MACD lines to format suitable for EMA calculation
-    macd_data = Enum.map(macd_lines, fn macd -> 
-      %{close: macd.value, timestamp: macd.timestamp} 
-    end)
-    
+    macd_data =
+      Enum.map(macd_lines, fn macd ->
+        %{close: macd.value, timestamp: macd.timestamp}
+      end)
+
     case EMA.calculate(macd_data, period: signal_period, source: :close) do
       {:ok, signal_results} -> signal_results
-      {:error, _} -> []  # Not enough data for signal line yet
+      # Not enough data for signal line yet
+      {:error, _} -> []
     end
   end
 
-  defp combine_macd_signal_results(macd_lines, signal_results, fast_period, slow_period, signal_period, source) do
+  defp combine_macd_signal_results(
+         macd_lines,
+         signal_results,
+         fast_period,
+         slow_period,
+         signal_period,
+         source
+       ) do
     # Create signal lookup map
     signal_map = Map.new(signal_results, fn result -> {result.timestamp, result.value} end)
-    
+
     # Combine MACD with available signal values
-    results = Enum.map(macd_lines, fn macd ->
-      macd_value = macd.value
-      signal_value = Map.get(signal_map, macd.timestamp)
-      
-      histogram_value = if signal_value do
-        Decimal.sub(macd_value, signal_value) |> Decimal.round(@precision)
-      else
-        nil
-      end
+    results =
+      Enum.map(macd_lines, fn macd ->
+        macd_value = macd.value
+        signal_value = Map.get(signal_map, macd.timestamp)
 
-      result_value = %{
-        macd: macd_value,
-        signal: signal_value,
-        histogram: histogram_value
-      }
+        histogram_value =
+          if signal_value do
+            Decimal.sub(macd_value, signal_value) |> Decimal.round(@precision)
+          else
+            nil
+          end
 
-      %{
-        value: result_value,
-        timestamp: macd.timestamp,
-        metadata: %{
-          indicator: "MACD",
-          fast_period: fast_period,
-          slow_period: slow_period,
-          signal_period: signal_period,
-          source: source
+        result_value = %{
+          macd: macd_value,
+          signal: signal_value,
+          histogram: histogram_value
         }
-      }
-    end)
+
+        %{
+          value: result_value,
+          timestamp: macd.timestamp,
+          metadata: %{
+            indicator: "MACD",
+            fast_period: fast_period,
+            slow_period: slow_period,
+            signal_period: signal_period,
+            source: source
+          }
+        }
+      end)
 
     {:ok, results}
   end
 
   defp build_macd_result(macd_line, signal_result) do
     signal_value = if signal_result, do: signal_result.value, else: nil
-    
-    histogram_value = if signal_value do
-      Decimal.sub(macd_line, signal_value) |> Decimal.round(@precision)
-    else
-      nil
-    end
+
+    histogram_value =
+      if signal_value do
+        Decimal.sub(macd_line, signal_value) |> Decimal.round(@precision)
+      else
+        nil
+      end
 
     %{
       macd: Decimal.round(macd_line, @precision),

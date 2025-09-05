@@ -86,15 +86,14 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
       {:ok, result} = StandardDeviation.calculate(data, period: 3)
   """
   @impl true
-  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
          source <- Keyword.get(opts, :source, :close),
          calculation <- Keyword.get(opts, :calculation, @default_calculation),
          :ok <- Utils.validate_data_length(data, period) do
-      
       prices = extract_prices(data, source)
       calculate_stddev_values(prices, period, calculation, source, data)
     end
@@ -127,12 +126,13 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -225,11 +225,13 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
       {:ok, new_state, result} = StandardDeviation.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{period: period, source: source, calculation: calculation, prices: prices, count: count} = _state, 
-                   data_point) do
-    
+  @spec update_state(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{period: period, source: source, calculation: calculation, prices: prices, count: count} =
+          _state,
+        data_point
+      ) do
     try do
       price = extract_single_price(data_point, source)
       new_prices = update_price_buffer(prices, price, period)
@@ -244,9 +246,11 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
       }
 
       if new_count >= period do
-        stddev_value = calculate_standard_deviation(new_prices, calculation) |> Decimal.round(@precision)
+        stddev_value =
+          calculate_standard_deviation(new_prices, calculation) |> Decimal.round(@precision)
+
         timestamp = get_timestamp(data_point)
-        
+
         result = %{
           value: stddev_value,
           timestamp: timestamp,
@@ -268,54 +272,65 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for StandardDeviation streaming",
-      operation: :update_state,
-      reason: "malformed state"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for StandardDeviation streaming",
+       operation: :update_state,
+       reason: "malformed state"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 2, do: :ok
+
   defp validate_period(period) do
-    {:error, %Errors.InvalidParams{
-      message: "Period must be an integer >= 2 for standard deviation calculation, got: #{inspect(period)}",
-      param: :period,
-      value: period,
-      expected: "integer >= 2"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message:
+         "Period must be an integer >= 2 for standard deviation calculation, got: #{inspect(period)}",
+       param: :period,
+       value: period,
+       expected: "integer >= 2"
+     }}
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid source: #{inspect(source)}",
-      param: :source,
-      value: source,
-      expected: "one of [:open, :high, :low, :close]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid source: #{inspect(source)}",
+       param: :source,
+       value: source,
+       expected: "one of [:open, :high, :low, :close]"
+     }}
   end
 
   defp validate_calculation(calculation) when calculation in [:sample, :population], do: :ok
+
   defp validate_calculation(calculation) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid calculation type: #{inspect(calculation)}",
-      param: :calculation,
-      value: calculation,
-      expected: "one of [:sample, :population]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid calculation type: #{inspect(calculation)}",
+       param: :calculation,
+       value: calculation,
+       expected: "one of [:sample, :population]"
+     }}
   end
 
   defp extract_prices(data, source) when is_list(data) and length(data) > 0 do
     # Check if data is already a price series (list of decimals)
     case List.first(data) do
-      %Decimal{} -> data  # Already a price series
-      %{} = _ohlcv -> extract_ohlcv_prices(data, source)  # OHLCV data
-      _ -> data  # Assume it's some other price series format
+      # Already a price series
+      %Decimal{} -> data
+      # OHLCV data
+      %{} = _ohlcv -> extract_ohlcv_prices(data, source)
+      # Assume it's some other price series format
+      _ -> data
     end
   end
-  
+
   defp extract_ohlcv_prices(data, :close), do: Utils.extract_closes(data)
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
@@ -342,9 +357,11 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
       |> Utils.sliding_window(period)
       |> Enum.with_index(period - 1)
       |> Enum.map(fn {window, index} ->
-        stddev_value = calculate_standard_deviation(window, calculation) |> Decimal.round(@precision)
+        stddev_value =
+          calculate_standard_deviation(window, calculation) |> Decimal.round(@precision)
+
         timestamp = get_data_timestamp(original_data, index)
-        
+
         %{
           value: stddev_value,
           timestamp: timestamp,
@@ -364,7 +381,8 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
     if index < length(data) do
       case Enum.at(data, index) do
         %{timestamp: timestamp} -> timestamp
-        _ -> DateTime.utc_now()  # For price series without timestamps
+        # For price series without timestamps
+        _ -> DateTime.utc_now()
       end
     else
       DateTime.utc_now()
@@ -373,16 +391,18 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
 
   defp update_price_buffer(prices, new_price, period) do
     updated_prices = prices ++ [new_price]
-    
+
     if length(updated_prices) > period do
-      Enum.take(updated_prices, -period)  # Take last N elements
+      # Take last N elements
+      Enum.take(updated_prices, -period)
     else
       updated_prices
     end
   end
 
   defp calculate_standard_deviation(values, :sample) do
-    Utils.standard_deviation(values)  # Utils already implements sample std dev
+    # Utils already implements sample std dev
+    Utils.standard_deviation(values)
   end
 
   defp calculate_standard_deviation(values, :population) do
@@ -390,11 +410,12 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
   end
 
   # Population standard deviation with N denominator
-  defp calculate_population_standard_deviation(values) when length(values) < 2, do: Decimal.new("0.0")
+  defp calculate_population_standard_deviation(values) when length(values) < 2,
+    do: Decimal.new("0.0")
 
   defp calculate_population_standard_deviation(values) when is_list(values) do
     mean_val = Utils.mean(values)
-    
+
     sum_squared_diffs =
       values
       |> Enum.map(fn value ->
@@ -404,7 +425,7 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
       |> Enum.reduce(Decimal.new("0"), &Decimal.add/2)
 
     variance = Decimal.div(sum_squared_diffs, Decimal.new(length(values)))
-    
+
     # Convert to float for sqrt calculation, then back to Decimal
     variance_float = Decimal.to_float(variance)
     sqrt_result = :math.sqrt(variance_float)

@@ -1,6 +1,6 @@
 defmodule TradingIndicators.DataQuality do
   require Decimal
-  
+
   @moduledoc """
   Data quality validation and sanitization for trading indicator calculations.
 
@@ -90,7 +90,8 @@ defmodule TradingIndicators.DataQuality do
       iex> report.valid_points
       2
   """
-  @spec validate_time_series(Types.data_series()) :: {:ok, Types.quality_report()} | {:error, term()}
+  @spec validate_time_series(Types.data_series()) ::
+          {:ok, Types.quality_report()} | {:error, term()}
   def validate_time_series(data) when is_list(data) do
     try do
       report = %{
@@ -107,32 +108,33 @@ defmodule TradingIndicators.DataQuality do
 
       # Validate individual data points
       {valid_count, issues1} = validate_data_points(data)
-      
+
       # Check for timestamp issues
       {timestamp_issues, missing_ts, duplicate_ts, chronological_errors} = validate_timestamps(data)
-      
+
       # Check OHLC relationships
       ohlc_issues = validate_ohlc_relationships(data)
-      
+
       # Check volume data
       volume_issues = validate_volume_data(data)
-      
+
       # Detect outliers
       {outliers, outlier_issues} = detect_statistical_outliers(data)
-      
+
       all_issues = issues1 ++ timestamp_issues ++ ohlc_issues ++ volume_issues ++ outlier_issues
-      
+
       quality_score = calculate_quality_score(report.total_points, length(all_issues))
-      
-      final_report = %{report |
-        valid_points: valid_count,
-        invalid_points: report.total_points - valid_count,
-        missing_timestamps: missing_ts,
-        duplicate_timestamps: duplicate_ts,
-        chronological_errors: chronological_errors,
-        outliers_detected: length(outliers),
-        quality_score: quality_score,
-        issues: all_issues
+
+      final_report = %{
+        report
+        | valid_points: valid_count,
+          invalid_points: report.total_points - valid_count,
+          missing_timestamps: missing_ts,
+          duplicate_timestamps: duplicate_ts,
+          chronological_errors: chronological_errors,
+          outliers_detected: length(outliers),
+          quality_score: quality_score,
+          issues: all_issues
       }
 
       {:ok, final_report}
@@ -142,7 +144,12 @@ defmodule TradingIndicators.DataQuality do
   end
 
   def validate_time_series(_data) do
-    {:error, %Errors.InvalidDataFormat{message: "Data must be a list", expected: "list", received: "invalid"}}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "Data must be a list",
+       expected: "list",
+       received: "invalid"
+     }}
   end
 
   @doc """
@@ -180,7 +187,7 @@ defmodule TradingIndicators.DataQuality do
         _ -> raise ArgumentError, "Unknown outlier detection method: #{inspect(method)}"
       end
     rescue
-      error -> 
+      error ->
         Logger.error("Error detecting outliers: #{inspect(error)}")
         []
     end
@@ -215,13 +222,14 @@ defmodule TradingIndicators.DataQuality do
           {:ok, Types.data_series()} | {:error, term()}
   def fill_gaps(data, method, opts \\ []) when is_list(data) and is_atom(method) do
     try do
-      cleaned_data = case method do
-        :forward_fill -> fill_gaps_forward(data)
-        :backward_fill -> fill_gaps_backward(data)
-        :interpolate -> fill_gaps_interpolate(data, opts)
-        :remove -> remove_invalid_points(data)
-        _ -> raise ArgumentError, "Unknown gap filling method: #{inspect(method)}"
-      end
+      cleaned_data =
+        case method do
+          :forward_fill -> fill_gaps_forward(data)
+          :backward_fill -> fill_gaps_backward(data)
+          :interpolate -> fill_gaps_interpolate(data, opts)
+          :remove -> remove_invalid_points(data)
+          _ -> raise ArgumentError, "Unknown gap filling method: #{inspect(method)}"
+        end
 
       {:ok, cleaned_data}
     rescue
@@ -257,13 +265,14 @@ defmodule TradingIndicators.DataQuality do
           {:ok, Types.data_series()} | {:error, term()}
   def normalize_data(data, method, opts \\ []) when is_list(data) and is_atom(method) do
     try do
-      normalized_data = case method do
-        :minmax -> normalize_minmax(data, opts)
-        :zscore -> normalize_zscore(data, opts)
-        :robust -> normalize_robust(data, opts)
-        :none -> data
-        _ -> raise ArgumentError, "Unknown normalization method: #{inspect(method)}"
-      end
+      normalized_data =
+        case method do
+          :minmax -> normalize_minmax(data, opts)
+          :zscore -> normalize_zscore(data, opts)
+          :robust -> normalize_robust(data, opts)
+          :none -> data
+          _ -> raise ArgumentError, "Unknown normalization method: #{inspect(method)}"
+        end
 
       {:ok, normalized_data}
     rescue
@@ -295,18 +304,20 @@ defmodule TradingIndicators.DataQuality do
   @spec quality_report(Types.data_series()) :: Types.quality_report()
   def quality_report(data) when is_list(data) do
     case validate_time_series(data) do
-      {:ok, report} -> 
+      {:ok, report} ->
         # Add additional analysis
-        enhanced_report = Map.merge(report, %{
-          data_coverage: calculate_data_coverage(data),
-          price_consistency: analyze_price_consistency(data),
-          volume_distribution: analyze_volume_distribution(data),
-          timestamp_regularity: analyze_timestamp_regularity(data),
-          recommendations: generate_quality_recommendations(report)
-        })
+        enhanced_report =
+          Map.merge(report, %{
+            data_coverage: calculate_data_coverage(data),
+            price_consistency: analyze_price_consistency(data),
+            volume_distribution: analyze_volume_distribution(data),
+            timestamp_regularity: analyze_timestamp_regularity(data),
+            recommendations: generate_quality_recommendations(report)
+          })
+
         enhanced_report
-      
-      {:error, _reason} -> 
+
+      {:error, _reason} ->
         %{
           total_points: length(data),
           valid_points: 0,
@@ -340,7 +351,7 @@ defmodule TradingIndicators.DataQuality do
   # Private helper functions
 
   defp validate_data_points(data) do
-    {valid_count, issues} = 
+    {valid_count, issues} =
       data
       |> Enum.with_index()
       |> Enum.reduce({0, []}, fn {point, index}, {valid_acc, issues_acc} ->
@@ -353,6 +364,7 @@ defmodule TradingIndicators.DataQuality do
             description: "Invalid OHLCV data point",
             severity: :high
           }
+
           {valid_acc, [issue | issues_acc]}
         end
       end)
@@ -367,7 +379,7 @@ defmodule TradingIndicators.DataQuality do
     _chronological_errors = 0
 
     # Check for missing timestamps
-    {issues, missing_timestamps} = 
+    {issues, missing_timestamps} =
       data
       |> Enum.with_index()
       |> Enum.reduce({issues, missing_timestamps}, fn {point, index}, {acc_issues, missing_count} ->
@@ -378,6 +390,7 @@ defmodule TradingIndicators.DataQuality do
             description: "Missing timestamp",
             severity: :critical
           }
+
           {[issue | acc_issues], missing_count + 1}
         else
           {acc_issues, missing_count}
@@ -400,16 +413,16 @@ defmodule TradingIndicators.DataQuality do
     _chronological_issues = []
 
     # Simple duplicate detection
-    duplicates = 
+    duplicates =
       timestamps
       |> Enum.with_index()
       |> Enum.group_by(fn {ts, _} -> ts end)
       |> Enum.filter(fn {_, occurrences} -> length(occurrences) > 1 end)
-      |> Enum.flat_map(fn {_, occurrences} -> 
+      |> Enum.flat_map(fn {_, occurrences} ->
         occurrences |> Enum.drop(1) |> Enum.map(fn {_, index} -> index end)
       end)
 
-    duplicate_issues = 
+    duplicate_issues =
       Enum.map(duplicates, fn index ->
         %{
           type: :duplicate,
@@ -420,7 +433,7 @@ defmodule TradingIndicators.DataQuality do
       end)
 
     # Simple chronological check
-    chronological_issues = 
+    chronological_issues =
       timestamps
       |> Enum.with_index()
       |> Enum.chunk_every(2, 1, :discard)
@@ -432,6 +445,7 @@ defmodule TradingIndicators.DataQuality do
             description: "Timestamp out of chronological order",
             severity: :high
           }
+
           [issue | acc]
         else
           acc
@@ -446,7 +460,9 @@ defmodule TradingIndicators.DataQuality do
     |> Enum.with_index()
     |> Enum.reduce([], fn {point, index}, acc ->
       case validate_single_ohlc(point) do
-        :ok -> acc
+        :ok ->
+          acc
+
         {:error, description} ->
           issue = %{
             type: :invalid_data,
@@ -454,31 +470,33 @@ defmodule TradingIndicators.DataQuality do
             description: description,
             severity: :high
           }
+
           [issue | acc]
       end
     end)
     |> Enum.reverse()
   end
 
-  defp validate_single_ohlc(%{open: open, high: high, low: low, close: close}) 
+  defp validate_single_ohlc(%{open: open, high: high, low: low, close: close})
        when not is_nil(open) and not is_nil(high) and not is_nil(low) and not is_nil(close) do
     cond do
       Decimal.compare(high, low) == :lt ->
         {:error, "High price is less than low price"}
-      
+
       Decimal.compare(high, open) == :lt ->
         {:error, "High price is less than open price"}
-        
+
       Decimal.compare(high, close) == :lt ->
         {:error, "High price is less than close price"}
-        
+
       Decimal.compare(low, open) == :gt ->
         {:error, "Low price is greater than open price"}
-        
+
       Decimal.compare(low, close) == :gt ->
         {:error, "Low price is greater than close price"}
-        
-      true -> :ok
+
+      true ->
+        :ok
     end
   end
 
@@ -491,7 +509,7 @@ defmodule TradingIndicators.DataQuality do
     |> Enum.with_index()
     |> Enum.reduce([], fn {point, index}, acc ->
       volume = Map.get(point, :volume, 0)
-      
+
       cond do
         volume < 0 ->
           issue = %{
@@ -500,9 +518,11 @@ defmodule TradingIndicators.DataQuality do
             description: "Negative volume",
             severity: :high
           }
+
           [issue | acc]
-        
-        true -> acc
+
+        true ->
+          acc
       end
     end)
     |> Enum.reverse()
@@ -510,7 +530,7 @@ defmodule TradingIndicators.DataQuality do
 
   defp detect_statistical_outliers(data) do
     # Simple outlier detection using close prices
-    closes = 
+    closes =
       data
       |> Enum.map(fn point -> Map.get(point, :close) end)
       |> Enum.reject(&is_nil/1)
@@ -520,8 +540,8 @@ defmodule TradingIndicators.DataQuality do
       {[], []}
     else
       outlier_indices = detect_outliers_iqr_simple(closes)
-      
-      outlier_issues = 
+
+      outlier_issues =
         Enum.map(outlier_indices, fn index ->
           %{
             type: :outlier,
@@ -537,12 +557,13 @@ defmodule TradingIndicators.DataQuality do
 
   defp detect_outliers_iqr(data, opts) do
     field = Keyword.get(opts, :field, :close)
-    
-    values = 
+
+    values =
       data
       |> Enum.with_index()
       |> Enum.map(fn {point, index} ->
         value = Map.get(point, field)
+
         if value && Decimal.is_decimal(value) do
           {Decimal.to_float(value), index}
         else
@@ -556,7 +577,7 @@ defmodule TradingIndicators.DataQuality do
     else
       numeric_values = Enum.map(values, fn {val, _} -> val end)
       outlier_values = detect_outliers_iqr_simple(numeric_values)
-      
+
       values
       |> Enum.filter(fn {val, _index} -> val in outlier_values end)
       |> Enum.map(fn {val, index} ->
@@ -573,17 +594,17 @@ defmodule TradingIndicators.DataQuality do
   defp detect_outliers_iqr_simple(values) when length(values) >= 4 do
     sorted = Enum.sort(values)
     n = length(sorted)
-    
+
     q1_pos = trunc(n * 0.25)
     q3_pos = trunc(n * 0.75)
-    
+
     q1 = Enum.at(sorted, q1_pos)
     q3 = Enum.at(sorted, q3_pos)
     iqr = q3 - q1
-    
+
     lower_bound = q1 - 1.5 * iqr
     upper_bound = q3 + 1.5 * iqr
-    
+
     Enum.filter(values, fn val ->
       val < lower_bound or val > upper_bound
     end)
@@ -594,17 +615,17 @@ defmodule TradingIndicators.DataQuality do
   defp detect_outliers_zscore(data, opts) do
     field = Keyword.get(opts, :field, :close)
     threshold = Keyword.get(opts, :threshold, 3.0)
-    
+
     # Simplified Z-score implementation
     values = extract_numeric_field(data, field)
-    
+
     if length(values) < 3 do
       []
     else
       mean = Enum.sum(values) / length(values)
       variance = Enum.sum(Enum.map(values, fn x -> (x - mean) * (x - mean) end)) / length(values)
       std_dev = :math.sqrt(variance)
-      
+
       if std_dev == 0 do
         []
       else
@@ -612,6 +633,7 @@ defmodule TradingIndicators.DataQuality do
         |> Enum.with_index()
         |> Enum.filter(fn {point, _index} ->
           value = Map.get(point, field)
+
           if value && Decimal.is_decimal(value) do
             z_score = abs(Decimal.to_float(value) - mean) / std_dev
             z_score > threshold
@@ -638,25 +660,28 @@ defmodule TradingIndicators.DataQuality do
   end
 
   defp fill_gaps_forward(data) do
-    {result, _} = 
+    {result, _} =
       Enum.reduce(data, {[], nil}, fn point, {acc, last_valid} ->
         if Types.valid_ohlcv?(point) do
           {[point | acc], point}
         else
           if last_valid do
-            filled_point = Map.merge(point, %{
-              open: last_valid.close,
-              high: last_valid.close,
-              low: last_valid.close,
-              close: last_valid.close
-            })
+            filled_point =
+              Map.merge(point, %{
+                open: last_valid.close,
+                high: last_valid.close,
+                low: last_valid.close,
+                close: last_valid.close
+              })
+
             {[filled_point | acc], last_valid}
           else
-            {acc, last_valid}  # Skip if no previous valid point
+            # Skip if no previous valid point
+            {acc, last_valid}
           end
         end
       end)
-    
+
     Enum.reverse(result)
   end
 
@@ -678,20 +703,22 @@ defmodule TradingIndicators.DataQuality do
 
   defp normalize_minmax(data, opts) do
     field = Keyword.get(opts, :field, :close)
-    
+
     values = extract_numeric_field(data, field)
+
     if length(values) == 0 do
       data
     else
       min_val = Enum.min(values)
       max_val = Enum.max(values)
       range = max_val - min_val
-      
+
       if range == 0 do
         data
       else
         Enum.map(data, fn point ->
           current_val = Map.get(point, field)
+
           if current_val && Decimal.is_decimal(current_val) do
             normalized = (Decimal.to_float(current_val) - min_val) / range
             Map.put(point, field, Decimal.from_float(normalized))
@@ -705,20 +732,22 @@ defmodule TradingIndicators.DataQuality do
 
   defp normalize_zscore(data, opts) do
     field = Keyword.get(opts, :field, :close)
-    
+
     values = extract_numeric_field(data, field)
+
     if length(values) < 2 do
       data
     else
       mean = Enum.sum(values) / length(values)
       variance = Enum.sum(Enum.map(values, fn x -> (x - mean) * (x - mean) end)) / length(values)
       std_dev = :math.sqrt(variance)
-      
+
       if std_dev == 0 do
         data
       else
         Enum.map(data, fn point ->
           current_val = Map.get(point, field)
+
           if current_val && Decimal.is_decimal(current_val) do
             normalized = (Decimal.to_float(current_val) - mean) / std_dev
             Map.put(point, field, Decimal.from_float(normalized))
@@ -733,20 +762,22 @@ defmodule TradingIndicators.DataQuality do
   defp normalize_robust(data, opts) do
     # Simplified robust normalization using median
     field = Keyword.get(opts, :field, :close)
-    
+
     values = extract_numeric_field(data, field)
+
     if length(values) < 2 do
       data
     else
       sorted_values = Enum.sort(values)
       median = median(sorted_values)
       mad = median_absolute_deviation(values, median)
-      
+
       if mad == 0 do
         data
       else
         Enum.map(data, fn point ->
           current_val = Map.get(point, field)
+
           if current_val && Decimal.is_decimal(current_val) do
             normalized = (Decimal.to_float(current_val) - median) / mad
             Map.put(point, field, Decimal.from_float(normalized))
@@ -776,6 +807,7 @@ defmodule TradingIndicators.DataQuality do
 
   defp median(sorted_list) do
     n = length(sorted_list)
+
     if rem(n, 2) == 1 do
       Enum.at(sorted_list, div(n, 2))
     else
@@ -810,25 +842,28 @@ defmodule TradingIndicators.DataQuality do
 
   defp generate_quality_recommendations(report) do
     recommendations = []
-    
-    recommendations = if report.quality_score < 80 do
-      ["Consider data cleaning to improve overall quality" | recommendations]
-    else
-      recommendations
-    end
-    
-    recommendations = if report.outliers_detected > 0 do
-      ["Review detected outliers for data integrity" | recommendations]
-    else
-      recommendations
-    end
-    
-    recommendations = if report.chronological_errors > 0 do
-      ["Sort data by timestamp to fix chronological order" | recommendations]
-    else
-      recommendations
-    end
-    
+
+    recommendations =
+      if report.quality_score < 80 do
+        ["Consider data cleaning to improve overall quality" | recommendations]
+      else
+        recommendations
+      end
+
+    recommendations =
+      if report.outliers_detected > 0 do
+        ["Review detected outliers for data integrity" | recommendations]
+      else
+        recommendations
+      end
+
+    recommendations =
+      if report.chronological_errors > 0 do
+        ["Sort data by timestamp to fix chronological order" | recommendations]
+      else
+        recommendations
+      end
+
     recommendations
   end
 end

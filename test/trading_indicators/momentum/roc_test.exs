@@ -7,16 +7,16 @@ defmodule TradingIndicators.Momentum.ROCTest do
   describe "calculate/2" do
     test "calculates ROC percentage with sufficient data" do
       data = create_test_data(15)
-      
+
       {:ok, results} = ROC.calculate(data, period: 12, variant: :percentage)
-      
+
       assert length(results) == 3
-      
+
       result = List.first(results)
       assert %{value: roc_value, timestamp: _timestamp, metadata: metadata} = result
-      
+
       assert Decimal.is_decimal(roc_value)
-      
+
       assert metadata.indicator == "ROC"
       assert metadata.period == 12
       assert metadata.variant == :percentage
@@ -25,11 +25,11 @@ defmodule TradingIndicators.Momentum.ROCTest do
 
     test "calculates ROC price difference variant" do
       data = create_test_data(15)
-      
+
       {:ok, results} = ROC.calculate(data, period: 10, variant: :price)
-      
+
       assert length(results) >= 1
-      
+
       result = List.first(results)
       assert result.metadata.variant == :price
       assert Decimal.is_decimal(result.value)
@@ -37,23 +37,34 @@ defmodule TradingIndicators.Momentum.ROCTest do
 
     test "works with price series input" do
       prices = [
-        Decimal.new("100"), Decimal.new("102"), Decimal.new("101"), Decimal.new("103"),
-        Decimal.new("105"), Decimal.new("104"), Decimal.new("106"), Decimal.new("108"),
-        Decimal.new("107"), Decimal.new("109"), Decimal.new("111"), Decimal.new("110"),
-        Decimal.new("112"), Decimal.new("114"), Decimal.new("113")
+        Decimal.new("100"),
+        Decimal.new("102"),
+        Decimal.new("101"),
+        Decimal.new("103"),
+        Decimal.new("105"),
+        Decimal.new("104"),
+        Decimal.new("106"),
+        Decimal.new("108"),
+        Decimal.new("107"),
+        Decimal.new("109"),
+        Decimal.new("111"),
+        Decimal.new("110"),
+        Decimal.new("112"),
+        Decimal.new("114"),
+        Decimal.new("113")
       ]
-      
+
       {:ok, results} = ROC.calculate(prices, period: 12)
-      
+
       assert length(results) >= 1
       assert Decimal.is_decimal(List.first(results).value)
     end
 
     test "returns error for insufficient data" do
       data = create_test_data(5)
-      
+
       {:error, error} = ROC.calculate(data, period: 12)
-      
+
       assert %TradingIndicators.Errors.InsufficientData{} = error
       assert error.required == 13
       assert error.provided == 5
@@ -61,17 +72,17 @@ defmodule TradingIndicators.Momentum.ROCTest do
 
     test "validates parameters correctly" do
       data = create_test_data(20)
-      
+
       # Invalid period
       {:error, error} = ROC.calculate(data, period: 0)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :period
-      
+
       # Invalid source
       {:error, error} = ROC.calculate(data, source: :invalid)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :source
-      
+
       # Invalid variant
       {:error, error} = ROC.calculate(data, variant: :invalid)
       assert %TradingIndicators.Errors.InvalidParams{} = error
@@ -82,7 +93,7 @@ defmodule TradingIndicators.Momentum.ROCTest do
   describe "streaming functionality" do
     test "init_state/1 initializes proper state" do
       state = ROC.init_state(period: 12, source: :close, variant: :percentage)
-      
+
       assert state.roc_period == 12
       assert state.source == :close
       assert state.variant == :percentage
@@ -92,7 +103,7 @@ defmodule TradingIndicators.Momentum.ROCTest do
 
     test "update_state/2 processes data points correctly" do
       state = ROC.init_state(period: 3)
-      
+
       data_points = [
         %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]},
         %{close: Decimal.new("102"), timestamp: ~U[2024-01-01 09:31:00Z]},
@@ -100,30 +111,35 @@ defmodule TradingIndicators.Momentum.ROCTest do
         %{close: Decimal.new("103"), timestamp: ~U[2024-01-01 09:33:00Z]},
         %{close: Decimal.new("105"), timestamp: ~U[2024-01-01 09:34:00Z]}
       ]
-      
-      {final_state, final_result} = Enum.reduce(data_points, {state, nil}, fn data_point, {acc_state, _} ->
-        {:ok, new_state, result} = ROC.update_state(acc_state, data_point)
-        {new_state, result}
-      end)
-      
+
+      {final_state, final_result} =
+        Enum.reduce(data_points, {state, nil}, fn data_point, {acc_state, _} ->
+          {:ok, new_state, result} = ROC.update_state(acc_state, data_point)
+          {new_state, result}
+        end)
+
       assert final_state.count == 5
-      assert is_map(final_result)  # Should have a result after period + 1 data points
+      # Should have a result after period + 1 data points
+      assert is_map(final_result)
       assert final_result.metadata.indicator == "ROC"
       assert Decimal.is_decimal(final_result.value)
     end
 
     test "update_state/2 works with price series" do
       state = ROC.init_state(period: 2)
-      
+
       prices = [
-        Decimal.new("100"), Decimal.new("102"), Decimal.new("104")
+        Decimal.new("100"),
+        Decimal.new("102"),
+        Decimal.new("104")
       ]
-      
-      {_final_state, final_result} = Enum.reduce(prices, {state, nil}, fn price, {acc_state, _} ->
-        {:ok, new_state, result} = ROC.update_state(acc_state, price)
-        {new_state, result}
-      end)
-      
+
+      {_final_state, final_result} =
+        Enum.reduce(prices, {state, nil}, fn price, {acc_state, _} ->
+          {:ok, new_state, result} = ROC.update_state(acc_state, price)
+          {new_state, result}
+        end)
+
       assert is_map(final_result)
       assert Decimal.is_decimal(final_result.value)
     end
@@ -137,12 +153,12 @@ defmodule TradingIndicators.Momentum.ROCTest do
         %{close: Decimal.new("102"), timestamp: ~U[2024-01-01 09:31:00Z]},
         %{close: Decimal.new("110"), timestamp: ~U[2024-01-01 09:32:00Z]}
       ]
-      
+
       {:ok, results} = ROC.calculate(data_points, period: 2, variant: :percentage)
-      
+
       assert length(results) == 1
       result = List.first(results)
-      
+
       # ROC% = ((110 - 100) / 100) * 100 = 10%
       expected_roc = Decimal.new("10.00")
       assert Decimal.equal?(result.value, expected_roc)
@@ -155,12 +171,12 @@ defmodule TradingIndicators.Momentum.ROCTest do
         %{close: Decimal.new("102"), timestamp: ~U[2024-01-01 09:31:00Z]},
         %{close: Decimal.new("110"), timestamp: ~U[2024-01-01 09:32:00Z]}
       ]
-      
+
       {:ok, results} = ROC.calculate(data_points, period: 2, variant: :price)
-      
+
       assert length(results) == 1
       result = List.first(results)
-      
+
       # Price ROC = 110 - 100 = 10
       expected_roc = Decimal.new("10.00")
       assert Decimal.equal?(result.value, expected_roc)
@@ -172,12 +188,12 @@ defmodule TradingIndicators.Momentum.ROCTest do
         %{close: Decimal.new("0"), timestamp: ~U[2024-01-01 09:30:00Z]},
         %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:31:00Z]}
       ]
-      
+
       {:ok, results} = ROC.calculate(data_points, period: 1, variant: :percentage)
-      
+
       assert length(results) == 1
       result = List.first(results)
-      
+
       # Should return 0 to avoid division by zero
       expected_roc = Decimal.new("0")
       assert Decimal.equal?(result.value, expected_roc)
@@ -186,7 +202,8 @@ defmodule TradingIndicators.Momentum.ROCTest do
 
   describe "required_periods/0" do
     test "returns default required periods" do
-      assert ROC.required_periods() == 13  # default period (12) + 1
+      # default period (12) + 1
+      assert ROC.required_periods() == 13
     end
   end
 
@@ -199,10 +216,11 @@ defmodule TradingIndicators.Momentum.ROCTest do
   # Helper function to create test data
   defp create_test_data(count) do
     base_price = 100
-    
+
     1..count
     |> Enum.map(fn i ->
       price = base_price + :rand.uniform(20) - 10
+
       %{
         close: Decimal.new(price),
         timestamp: DateTime.add(~U[2024-01-01 09:30:00Z], i * 60, :second)

@@ -15,28 +15,56 @@ defmodule TradingIndicators.UtilsTest do
 
     test "extract_closes/1 extracts closing prices", %{data: data} do
       closes = Utils.extract_closes(data)
-      expected = [Decimal.new("103.0"), Decimal.new("106.0"), Decimal.new("105.0"), Decimal.new("108.0"), Decimal.new("107.0")]
+
+      expected = [
+        Decimal.new("103.0"),
+        Decimal.new("106.0"),
+        Decimal.new("105.0"),
+        Decimal.new("108.0"),
+        Decimal.new("107.0")
+      ]
 
       assert closes == expected
     end
 
     test "extract_highs/1 extracts high prices", %{data: data} do
       highs = Utils.extract_highs(data)
-      expected = [Decimal.new("105.0"), Decimal.new("107.0"), Decimal.new("108.0"), Decimal.new("109.0"), Decimal.new("110.0")]
+
+      expected = [
+        Decimal.new("105.0"),
+        Decimal.new("107.0"),
+        Decimal.new("108.0"),
+        Decimal.new("109.0"),
+        Decimal.new("110.0")
+      ]
 
       assert highs == expected
     end
 
     test "extract_lows/1 extracts low prices", %{data: data} do
       lows = Utils.extract_lows(data)
-      expected = [Decimal.new("99.0"), Decimal.new("102.0"), Decimal.new("104.0"), Decimal.new("103.0"), Decimal.new("106.0")]
+
+      expected = [
+        Decimal.new("99.0"),
+        Decimal.new("102.0"),
+        Decimal.new("104.0"),
+        Decimal.new("103.0"),
+        Decimal.new("106.0")
+      ]
 
       assert lows == expected
     end
 
     test "extract_opens/1 extracts opening prices", %{data: data} do
       opens = Utils.extract_opens(data)
-      expected = [Decimal.new("100.0"), Decimal.new("103.0"), Decimal.new("106.0"), Decimal.new("105.0"), Decimal.new("108.0")]
+
+      expected = [
+        Decimal.new("100.0"),
+        Decimal.new("103.0"),
+        Decimal.new("106.0"),
+        Decimal.new("105.0"),
+        Decimal.new("108.0")
+      ]
 
       assert opens == expected
     end
@@ -51,15 +79,39 @@ defmodule TradingIndicators.UtilsTest do
 
   describe "mathematical functions" do
     test "mean/1 calculates arithmetic mean" do
-      assert Decimal.equal?(Utils.mean([Decimal.new("1"), Decimal.new("2"), Decimal.new("3"), Decimal.new("4"), Decimal.new("5")]), Decimal.new("3.0"))
-      assert Decimal.equal?(Utils.mean([Decimal.new("10"), Decimal.new("20"), Decimal.new("30")]), Decimal.new("20.0"))
+      assert Decimal.equal?(
+               Utils.mean([
+                 Decimal.new("1"),
+                 Decimal.new("2"),
+                 Decimal.new("3"),
+                 Decimal.new("4"),
+                 Decimal.new("5")
+               ]),
+               Decimal.new("3.0")
+             )
+
+      assert Decimal.equal?(
+               Utils.mean([Decimal.new("10"), Decimal.new("20"), Decimal.new("30")]),
+               Decimal.new("20.0")
+             )
+
       assert Decimal.equal?(Utils.mean([Decimal.new("100")]), Decimal.new("100.0"))
       assert Decimal.equal?(Utils.mean([]), Decimal.new("0.0"))
     end
 
     test "standard_deviation/1 calculates sample standard deviation" do
       # Known values for testing
-      values = [Decimal.new("2"), Decimal.new("4"), Decimal.new("4"), Decimal.new("4"), Decimal.new("5"), Decimal.new("5"), Decimal.new("7"), Decimal.new("9")]
+      values = [
+        Decimal.new("2"),
+        Decimal.new("4"),
+        Decimal.new("4"),
+        Decimal.new("4"),
+        Decimal.new("5"),
+        Decimal.new("5"),
+        Decimal.new("7"),
+        Decimal.new("9")
+      ]
+
       result = Utils.standard_deviation(values)
       # Expected standard deviation is approximately 2.138
       result_float = Decimal.to_float(result)
@@ -68,11 +120,25 @@ defmodule TradingIndicators.UtilsTest do
       # Edge cases
       assert Decimal.equal?(Utils.standard_deviation([]), Decimal.new("0.0"))
       assert Decimal.equal?(Utils.standard_deviation([Decimal.new("5")]), Decimal.new("0.0"))
-      assert Decimal.equal?(Utils.standard_deviation([Decimal.new("5"), Decimal.new("5"), Decimal.new("5")]), Decimal.new("0.0"))
+
+      assert Decimal.equal?(
+               Utils.standard_deviation([Decimal.new("5"), Decimal.new("5"), Decimal.new("5")]),
+               Decimal.new("0.0")
+             )
     end
 
     test "variance/1 calculates sample variance" do
-      values = [Decimal.new("2"), Decimal.new("4"), Decimal.new("4"), Decimal.new("4"), Decimal.new("5"), Decimal.new("5"), Decimal.new("7"), Decimal.new("9")]
+      values = [
+        Decimal.new("2"),
+        Decimal.new("4"),
+        Decimal.new("4"),
+        Decimal.new("4"),
+        Decimal.new("5"),
+        Decimal.new("5"),
+        Decimal.new("7"),
+        Decimal.new("9")
+      ]
+
       result = Utils.variance(values)
       # Expected variance is approximately 4.571
       result_float = Decimal.to_float(result)
@@ -90,12 +156,31 @@ defmodule TradingIndicators.UtilsTest do
     end
 
     test "percentage_change/2 calculates percentage change" do
-      assert Decimal.equal?(Utils.percentage_change(Decimal.new("100"), Decimal.new("110")), Decimal.new("10.0"))
-      assert Decimal.equal?(Utils.percentage_change(Decimal.new("100"), Decimal.new("90")), Decimal.new("-10.0"))
-      assert Decimal.equal?(Utils.percentage_change(Decimal.new("50"), Decimal.new("75")), Decimal.new("50.0"))
+      assert Decimal.equal?(
+               Utils.percentage_change(Decimal.new("100"), Decimal.new("110")),
+               Decimal.new("10.0")
+             )
+
+      assert Decimal.equal?(
+               Utils.percentage_change(Decimal.new("100"), Decimal.new("90")),
+               Decimal.new("-10.0")
+             )
+
+      assert Decimal.equal?(
+               Utils.percentage_change(Decimal.new("50"), Decimal.new("75")),
+               Decimal.new("50.0")
+             )
+
       # Edge case: division by zero
-      assert Decimal.equal?(Utils.percentage_change(Decimal.new("0"), Decimal.new("10")), Decimal.new("0.0"))
-      assert Decimal.equal?(Utils.percentage_change(Decimal.new("100"), Decimal.new("100")), Decimal.new("0.0"))
+      assert Decimal.equal?(
+               Utils.percentage_change(Decimal.new("0"), Decimal.new("10")),
+               Decimal.new("0.0")
+             )
+
+      assert Decimal.equal?(
+               Utils.percentage_change(Decimal.new("100"), Decimal.new("100")),
+               Decimal.new("0.0")
+             )
     end
   end
 
@@ -145,7 +230,11 @@ defmodule TradingIndicators.UtilsTest do
     test "typical_price/1 calculates typical price for single data point", %{data: [first | _]} do
       result = Utils.typical_price(first)
       # (H + L + C) / 3
-      expected = Decimal.div(Decimal.add(Decimal.add(Decimal.new("105.0"), Decimal.new("99.0")), Decimal.new("103.0")), Decimal.new("3.0"))
+      expected =
+        Decimal.div(
+          Decimal.add(Decimal.add(Decimal.new("105.0"), Decimal.new("99.0")), Decimal.new("103.0")),
+          Decimal.new("3.0")
+        )
 
       assert Decimal.equal?(result, expected)
     end
@@ -234,20 +323,36 @@ defmodule TradingIndicators.UtilsTest do
     test "forward_fill/2 fills missing values" do
       data = [Decimal.new("1"), nil, Decimal.new("3"), nil, nil, Decimal.new("6")]
       result = Utils.forward_fill(data)
-      expected = [Decimal.new("1"), Decimal.new("1"), Decimal.new("3"), Decimal.new("3"), Decimal.new("3"), Decimal.new("6")]
+
+      expected = [
+        Decimal.new("1"),
+        Decimal.new("1"),
+        Decimal.new("3"),
+        Decimal.new("3"),
+        Decimal.new("3"),
+        Decimal.new("6")
+      ]
 
       assert result == expected
     end
 
     test "forward_fill/2 handles edge cases" do
       # Starting with nil
-      assert Utils.forward_fill([nil, Decimal.new("2"), nil, Decimal.new("4")], Decimal.new("0")) == [Decimal.new("0"), Decimal.new("2"), Decimal.new("2"), Decimal.new("4")]
+      assert Utils.forward_fill([nil, Decimal.new("2"), nil, Decimal.new("4")], Decimal.new("0")) ==
+               [Decimal.new("0"), Decimal.new("2"), Decimal.new("2"), Decimal.new("4")]
 
       # All nil
-      assert Utils.forward_fill([nil, nil, nil], Decimal.new("5")) == [Decimal.new("5"), Decimal.new("5"), Decimal.new("5")]
+      assert Utils.forward_fill([nil, nil, nil], Decimal.new("5")) == [
+               Decimal.new("5"),
+               Decimal.new("5"),
+               Decimal.new("5")
+             ]
 
       # No nil values
-      assert Utils.forward_fill([Decimal.new("1"), Decimal.new("2"), Decimal.new("3")], Decimal.new("0")) == [Decimal.new("1"), Decimal.new("2"), Decimal.new("3")]
+      assert Utils.forward_fill(
+               [Decimal.new("1"), Decimal.new("2"), Decimal.new("3")],
+               Decimal.new("0")
+             ) == [Decimal.new("1"), Decimal.new("2"), Decimal.new("3")]
 
       # Empty list
       assert Utils.forward_fill([], Decimal.new("0")) == []
@@ -258,7 +363,8 @@ defmodule TradingIndicators.UtilsTest do
     test "mean is always between min and max values" do
       # Generate random data for property testing
       ohlcv_data = DataGenerator.sample_prices(100)
-      data = Utils.extract_closes(ohlcv_data)  # Extract closing prices
+      # Extract closing prices
+      data = Utils.extract_closes(ohlcv_data)
       mean_val = Utils.mean(data)
 
       min_val = Enum.min(data, Decimal)
@@ -272,7 +378,8 @@ defmodule TradingIndicators.UtilsTest do
       # Test with various data sets
       for _i <- 1..10 do
         ohlcv_data = DataGenerator.sample_prices(50)
-        data = Utils.extract_closes(ohlcv_data)  # Extract closing prices
+        # Extract closing prices
+        data = Utils.extract_closes(ohlcv_data)
         std_dev = Utils.standard_deviation(data)
 
         assert Decimal.compare(std_dev, Decimal.new("0.0")) != :lt

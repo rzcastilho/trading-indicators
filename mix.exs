@@ -13,7 +13,7 @@ defmodule TradingIndicators.MixProject do
       name: "TradingIndicators",
       source_url: "https://github.com/rzcastilho/trading_indicators",
       docs: docs(),
-      
+
       # Testing and Quality Configuration
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
@@ -23,13 +23,13 @@ defmodule TradingIndicators.MixProject do
         "coveralls.html": :test,
         "coveralls.json": :test
       ],
-      
+
       # Static Analysis
       dialyzer: [
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         flags: [:error_handling, :race_conditions, :underspecs]
       ],
-      
+
       # Type Checking
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: Mix.compilers()
@@ -54,7 +54,7 @@ defmodule TradingIndicators.MixProject do
       {:benchee, "~> 1.1", only: [:dev, :test]},
       {:benchee_html, "~> 1.0", only: [:dev, :test]},
       {:benchee_json, "~> 1.0", only: [:dev, :test]},
-      {:stream_data, "~> 1.0", only: :test},
+      {:stream_data, "~> 1.0", only: [:dev, :test]},
       {:excoveralls, "~> 0.18", only: :test},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
@@ -90,7 +90,7 @@ defmodule TradingIndicators.MixProject do
         Guides: ~r/guides\/.*/
       ],
       groups_for_modules: [
-        "Core": [TradingIndicators, TradingIndicators.Types],
+        Core: [TradingIndicators, TradingIndicators.Types],
         "Trend Indicators": [
           TradingIndicators.Trend,
           TradingIndicators.Trend.SMA,
@@ -122,7 +122,7 @@ defmodule TradingIndicators.MixProject do
           TradingIndicators.Volume.AccumulationDistribution,
           TradingIndicators.Volume.ChaikinMoneyFlow
         ],
-        "Utilities": [
+        Utilities: [
           TradingIndicators.Utils,
           TradingIndicators.DataQuality,
           TradingIndicators.Pipeline,
@@ -134,6 +134,6 @@ defmodule TradingIndicators.MixProject do
   end
 
   # Environment-specific compilation paths
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(env) when env in [:dev, :test], do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 end

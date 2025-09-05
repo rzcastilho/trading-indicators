@@ -117,8 +117,8 @@ defmodule TradingIndicators.Momentum.Momentum do
       {:ok, result} = Momentum.calculate(data, period: 10)
   """
   @impl true
-  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
@@ -126,7 +126,6 @@ defmodule TradingIndicators.Momentum.Momentum do
          smoothing <- Keyword.get(opts, :smoothing, @default_smoothing),
          normalized <- Keyword.get(opts, :normalized, @default_normalized),
          :ok <- Utils.validate_data_length(data, period + 1 + smoothing - 1) do
-      
       prices = extract_prices(data, source)
       calculate_momentum_values(prices, period, smoothing, normalized, source, data)
     end
@@ -161,12 +160,13 @@ defmodule TradingIndicators.Momentum.Momentum do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -264,54 +264,42 @@ defmodule TradingIndicators.Momentum.Momentum do
       {:ok, new_state, result} = Momentum.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{momentum_period: period, source: source, smoothing: smoothing,
-                     normalized: normalized, previous_prices: prices, 
-                     momentum_values: momentum_values, count: count} = _state, 
-                   data_point) do
-    
+  @spec update_state(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{
+          momentum_period: period,
+          source: source,
+          smoothing: smoothing,
+          normalized: normalized,
+          previous_prices: prices,
+          momentum_values: momentum_values,
+          count: count
+        } = _state,
+        data_point
+      ) do
     try do
       current_price = extract_single_price(data_point, source)
       new_count = count + 1
-      
+
       # Update price buffer
       new_prices = update_buffer(prices, current_price, period + 1)
-      
+
       # Calculate momentum if we have enough price data
-      {new_momentum_values, result} = if new_count >= period + 1 do
-        historical_price = List.first(new_prices)
-        raw_momentum = calculate_momentum_value(current_price, historical_price, normalized)
-        
-        # Apply smoothing if specified
-        updated_momentum_values = update_buffer(momentum_values, raw_momentum, smoothing)
-        
-        if smoothing > 1 and length(updated_momentum_values) >= smoothing do
-          smoothed_momentum = Utils.mean(updated_momentum_values)
-          timestamp = get_timestamp(data_point)
-          
-          result = %{
-            value: smoothed_momentum,
-            timestamp: timestamp,
-            metadata: %{
-              indicator: "Momentum",
-              period: period,
-              source: source,
-              smoothing: smoothing,
-              normalized: normalized,
-              signal: determine_signal(smoothed_momentum)
-            }
-          }
-          
-          {updated_momentum_values, result}
-        else
-          # No smoothing or not enough data for smoothing yet
-          final_momentum = if smoothing == 1, do: raw_momentum, else: List.last(updated_momentum_values)
-          timestamp = get_timestamp(data_point)
-          
-          result = if smoothing == 1 or length(updated_momentum_values) >= smoothing do
-            %{
-              value: final_momentum,
+      {new_momentum_values, result} =
+        if new_count >= period + 1 do
+          historical_price = List.first(new_prices)
+          raw_momentum = calculate_momentum_value(current_price, historical_price, normalized)
+
+          # Apply smoothing if specified
+          updated_momentum_values = update_buffer(momentum_values, raw_momentum, smoothing)
+
+          if smoothing > 1 and length(updated_momentum_values) >= smoothing do
+            smoothed_momentum = Utils.mean(updated_momentum_values)
+            timestamp = get_timestamp(data_point)
+
+            result = %{
+              value: smoothed_momentum,
               timestamp: timestamp,
               metadata: %{
                 indicator: "Momentum",
@@ -319,19 +307,43 @@ defmodule TradingIndicators.Momentum.Momentum do
                 source: source,
                 smoothing: smoothing,
                 normalized: normalized,
-                signal: determine_signal(final_momentum)
+                signal: determine_signal(smoothed_momentum)
               }
             }
+
+            {updated_momentum_values, result}
           else
-            nil  # Not enough data for smoothed result
+            # No smoothing or not enough data for smoothing yet
+            final_momentum =
+              if smoothing == 1, do: raw_momentum, else: List.last(updated_momentum_values)
+
+            timestamp = get_timestamp(data_point)
+
+            result =
+              if smoothing == 1 or length(updated_momentum_values) >= smoothing do
+                %{
+                  value: final_momentum,
+                  timestamp: timestamp,
+                  metadata: %{
+                    indicator: "Momentum",
+                    period: period,
+                    source: source,
+                    smoothing: smoothing,
+                    normalized: normalized,
+                    signal: determine_signal(final_momentum)
+                  }
+                }
+              else
+                # Not enough data for smoothed result
+                nil
+              end
+
+            {updated_momentum_values, result}
           end
-          
-          {updated_momentum_values, result}
+        else
+          {momentum_values, nil}
         end
-      else
-        {momentum_values, nil}
-      end
-      
+
       new_state = %{
         momentum_period: period,
         source: source,
@@ -341,7 +353,7 @@ defmodule TradingIndicators.Momentum.Momentum do
         momentum_values: new_momentum_values,
         count: new_count
       }
-      
+
       {:ok, new_state, result}
     rescue
       error -> {:error, error}
@@ -349,53 +361,63 @@ defmodule TradingIndicators.Momentum.Momentum do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for Momentum streaming",
-      operation: :update_state,
-      reason: "malformed state"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for Momentum streaming",
+       operation: :update_state,
+       reason: "malformed state"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period, _name) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period, name) do
-    {:error, %Errors.InvalidParams{
-      message: "#{name} must be a positive integer, got #{inspect(period)}",
-      param: name,
-      value: period,
-      expected: "positive integer"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "#{name} must be a positive integer, got #{inspect(period)}",
+       param: name,
+       value: period,
+       expected: "positive integer"
+     }}
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid source: #{inspect(source)}",
-      param: :source,
-      value: source,
-      expected: "one of [:open, :high, :low, :close]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid source: #{inspect(source)}",
+       param: :source,
+       value: source,
+       expected: "one of [:open, :high, :low, :close]"
+     }}
   end
 
   defp validate_normalized(normalized) when is_boolean(normalized), do: :ok
+
   defp validate_normalized(normalized) do
-    {:error, %Errors.InvalidParams{
-      message: "Normalized must be a boolean, got #{inspect(normalized)}",
-      param: :normalized,
-      value: normalized,
-      expected: "boolean"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Normalized must be a boolean, got #{inspect(normalized)}",
+       param: :normalized,
+       value: normalized,
+       expected: "boolean"
+     }}
   end
 
   defp extract_prices(data, source) when is_list(data) and length(data) > 0 do
     case List.first(data) do
-      %Decimal{} -> data  # Already a price series
-      %{} = _ohlcv -> extract_ohlcv_prices(data, source)  # OHLCV data
-      _ -> data  # Assume it's some other price series format
+      # Already a price series
+      %Decimal{} -> data
+      # OHLCV data
+      %{} = _ohlcv -> extract_ohlcv_prices(data, source)
+      # Assume it's some other price series format
+      _ -> data
     end
   end
-  
+
   defp extract_ohlcv_prices(data, :close), do: Utils.extract_closes(data)
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
@@ -408,7 +430,7 @@ defmodule TradingIndicators.Momentum.Momentum do
   defp extract_single_price(price, _source) when is_number(price) do
     Decimal.new(price)
   end
-  
+
   defp extract_single_price(%{} = data_point, source) do
     Map.fetch!(data_point, source)
   end
@@ -417,30 +439,39 @@ defmodule TradingIndicators.Momentum.Momentum do
     # Create pairs of current price and price n periods ago
     current_prices = Enum.drop(prices, period)
     historical_prices = Enum.take(prices, length(prices) - period)
-    
+
     # Calculate raw momentum values
-    raw_momentum_values = 
+    raw_momentum_values =
       Enum.zip(current_prices, historical_prices)
       |> Enum.map(fn {current, historical} ->
         calculate_momentum_value(current, historical, normalized)
       end)
-    
+
     # Apply smoothing if specified
-    final_momentum_values = if smoothing > 1 do
-      apply_smoothing(raw_momentum_values, smoothing)
-    else
-      raw_momentum_values
-    end
-    
+    final_momentum_values =
+      if smoothing > 1 do
+        apply_smoothing(raw_momentum_values, smoothing)
+      else
+        raw_momentum_values
+      end
+
     # Build results
-    results = build_momentum_results(final_momentum_values, period, smoothing, normalized, source, original_data)
-    
+    results =
+      build_momentum_results(
+        final_momentum_values,
+        period,
+        smoothing,
+        normalized,
+        source,
+        original_data
+      )
+
     {:ok, results}
   end
 
   defp calculate_momentum_value(current_price, historical_price, normalized) do
     difference = Decimal.sub(current_price, historical_price)
-    
+
     case normalized do
       true ->
         # Normalize by historical price (similar to percentage change but without * 100)
@@ -448,6 +479,7 @@ defmodule TradingIndicators.Momentum.Momentum do
           true -> Decimal.new("0")
           false -> Decimal.div(difference, historical_price) |> Decimal.round(@precision)
         end
+
       false ->
         # Raw price difference
         Decimal.round(difference, @precision)
@@ -462,12 +494,12 @@ defmodule TradingIndicators.Momentum.Momentum do
   defp build_momentum_results(momentum_values, period, smoothing, normalized, source, original_data) do
     # Adjust starting index based on smoothing
     start_index = period + smoothing - 1
-    
+
     momentum_values
     |> Enum.with_index(start_index)
     |> Enum.map(fn {momentum_value, index} ->
       timestamp = get_data_timestamp(original_data, index)
-      
+
       %{
         value: momentum_value,
         timestamp: timestamp,
@@ -485,7 +517,7 @@ defmodule TradingIndicators.Momentum.Momentum do
 
   defp determine_signal(momentum_value) do
     zero = Decimal.new("0")
-    
+
     cond do
       Decimal.gt?(momentum_value, zero) -> :bullish
       Decimal.lt?(momentum_value, zero) -> :bearish
@@ -509,7 +541,7 @@ defmodule TradingIndicators.Momentum.Momentum do
 
   defp update_buffer(buffer, new_value, max_size) do
     updated_buffer = buffer ++ [new_value]
-    
+
     if length(updated_buffer) > max_size do
       Enum.take(updated_buffer, -max_size)
     else

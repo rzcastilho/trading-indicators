@@ -1,6 +1,6 @@
 defmodule TradingIndicators.Utils do
   require Decimal
-  
+
   @moduledoc """
   Common utility functions used throughout the TradingIndicators library.
 
@@ -183,7 +183,7 @@ defmodule TradingIndicators.Utils do
   def standard_deviation(values) when is_list(values) do
     mean_val = mean(values)
     variance_val = variance(values, mean_val)
-    
+
     # Convert to float for sqrt calculation, then back to Decimal
     variance_float = Decimal.to_float(variance_val)
     sqrt_result = :math.sqrt(variance_float)
@@ -540,23 +540,28 @@ defmodule TradingIndicators.Utils do
   """
   @spec validate_volumes(Types.data_series()) :: :ok | {:error, Exception.t()}
   def validate_volumes([]), do: :ok
+
   def validate_volumes([%{volume: volume} | rest]) when is_integer(volume) and volume >= 0 do
     validate_volumes(rest)
   end
+
   def validate_volumes([%{volume: volume} = data_point | _rest]) do
-    {:error, %Errors.ValidationError{
-      message: "Volume must be a non-negative integer",
-      field: :volume,
-      value: volume,
-      constraint: "must be non-negative integer, got #{inspect(volume)} in #{inspect(data_point)}"
-    }}
+    {:error,
+     %Errors.ValidationError{
+       message: "Volume must be a non-negative integer",
+       field: :volume,
+       value: volume,
+       constraint: "must be non-negative integer, got #{inspect(volume)} in #{inspect(data_point)}"
+     }}
   end
+
   def validate_volumes([invalid | _rest]) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "Data point missing volume field",
-      expected: "map with :volume key",
-      received: inspect(invalid)
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "Data point missing volume field",
+       expected: "map with :volume key",
+       received: inspect(invalid)
+     }}
   end
 
   @doc """
@@ -582,6 +587,7 @@ defmodule TradingIndicators.Utils do
   """
   @spec has_volume?(Types.data_series()) :: boolean()
   def has_volume?([]), do: false
+
   def has_volume?(data) when is_list(data) do
     Enum.any?(data, fn
       %{volume: volume} when is_integer(volume) -> volume > 0
@@ -642,13 +648,16 @@ defmodule TradingIndicators.Utils do
   def volume_weighted_price(%{close: close, volume: volume}, :close) do
     Decimal.mult(close, Decimal.new(volume))
   end
+
   def volume_weighted_price(%{open: open, volume: volume}, :open) do
     Decimal.mult(open, Decimal.new(volume))
   end
+
   def volume_weighted_price(%{high: high, low: low, close: close, volume: volume}, :typical) do
     typical_price = typical_price(%{high: high, low: low, close: close})
     Decimal.mult(typical_price, Decimal.new(volume))
   end
+
   def volume_weighted_price(%{high: high, low: low, close: close, volume: volume}, :weighted) do
     # Weighted Price = (High + Low + 2*Close) / 4
     close_x2 = Decimal.mult(close, Decimal.new("2"))

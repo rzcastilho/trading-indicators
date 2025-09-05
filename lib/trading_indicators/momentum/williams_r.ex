@@ -100,8 +100,8 @@ defmodule TradingIndicators.Momentum.WilliamsR do
       {:ok, result} = WilliamsR.calculate(data, period: 14)
   """
   @impl true
-  @spec calculate(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
@@ -109,7 +109,6 @@ defmodule TradingIndicators.Momentum.WilliamsR do
          oversold <- Keyword.get(opts, :oversold, @default_oversold),
          :ok <- validate_data_format(data),
          :ok <- Utils.validate_data_length(data, period) do
-      
       calculate_williams_r_values(data, period, overbought, oversold)
     end
   end
@@ -142,12 +141,13 @@ defmodule TradingIndicators.Momentum.WilliamsR do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -241,19 +241,26 @@ defmodule TradingIndicators.Momentum.WilliamsR do
       {:ok, new_state, result} = WilliamsR.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{period: period, overbought: overbought, oversold: oversold,
-                     recent_highs: highs, recent_lows: lows, count: count} = _state,
-                   %{high: high, low: low, close: close} = data_point) do
-    
+  @spec update_state(map(), Types.ohlcv()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{
+          period: period,
+          overbought: overbought,
+          oversold: oversold,
+          recent_highs: highs,
+          recent_lows: lows,
+          count: count
+        } = _state,
+        %{high: high, low: low, close: close} = data_point
+      ) do
     try do
       new_count = count + 1
-      
+
       # Update buffers
       new_highs = update_buffer(highs, high, period)
       new_lows = update_buffer(lows, low, period)
-      
+
       new_state = %{
         period: period,
         overbought: overbought,
@@ -262,12 +269,12 @@ defmodule TradingIndicators.Momentum.WilliamsR do
         recent_lows: new_lows,
         count: new_count
       }
-      
+
       # Calculate Williams %R if we have enough data
       if new_count >= period do
         williams_r_value = calculate_williams_r_value(new_highs, new_lows, close)
         timestamp = Map.get(data_point, :timestamp, DateTime.utc_now())
-        
+
         result = %{
           value: williams_r_value,
           timestamp: timestamp,
@@ -279,7 +286,7 @@ defmodule TradingIndicators.Momentum.WilliamsR do
             signal: determine_signal(williams_r_value, overbought, oversold)
           }
         }
-        
+
         {:ok, new_state, result}
       else
         {:ok, new_state, nil}
@@ -290,50 +297,60 @@ defmodule TradingIndicators.Momentum.WilliamsR do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for Williams %R streaming",
-      operation: :update_state,
-      reason: "malformed state or missing required OHLC fields"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for Williams %R streaming",
+       operation: :update_state,
+       reason: "malformed state or missing required OHLC fields"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period) do
     {:error, Errors.invalid_period(period)}
   end
 
   defp validate_level(level, _name) when is_number(level) and level >= -100 and level <= 0, do: :ok
+
   defp validate_level(level, name) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid #{name} level: #{inspect(level)}",
-      param: name,
-      value: level,
-      expected: "number between -100 and 0"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid #{name} level: #{inspect(level)}",
+       param: name,
+       value: level,
+       expected: "number between -100 and 0"
+     }}
   end
 
   defp validate_level_relationship(oversold, overbought) when oversold < overbought, do: :ok
+
   defp validate_level_relationship(oversold, overbought) do
-    {:error, %Errors.InvalidParams{
-      message: "Oversold level (#{oversold}) must be less than overbought level (#{overbought})",
-      param: :levels,
-      value: {oversold, overbought},
-      expected: "oversold < overbought"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Oversold level (#{oversold}) must be less than overbought level (#{overbought})",
+       param: :levels,
+       value: {oversold, overbought},
+       expected: "oversold < overbought"
+     }}
   end
 
   defp validate_data_format([]), do: :ok
+
   defp validate_data_format([first | _rest]) do
     case first do
-      %{high: _, low: _, close: _} -> :ok
-      _ -> 
-        {:error, %Errors.InvalidDataFormat{
-          message: "Williams %R requires OHLCV data with high, low, and close fields",
-          expected: "OHLCV data with :high, :low, :close fields",
-          received: "data without required fields"
-        }}
+      %{high: _, low: _, close: _} ->
+        :ok
+
+      _ ->
+        {:error,
+         %Errors.InvalidDataFormat{
+           message: "Williams %R requires OHLCV data with high, low, and close fields",
+           expected: "OHLCV data with :high, :low, :close fields",
+           received: "data without required fields"
+         }}
     end
   end
 
@@ -342,33 +359,36 @@ defmodule TradingIndicators.Momentum.WilliamsR do
     highs = Utils.extract_highs(data)
     lows = Utils.extract_lows(data)
     closes = Utils.extract_closes(data)
-    
+
     # Calculate Williams %R values using sliding windows
     high_windows = Utils.sliding_window(highs, period)
     low_windows = Utils.sliding_window(lows, period)
     close_slice = Enum.drop(closes, period - 1)
-    
-    williams_r_values = 
+
+    williams_r_values =
       Enum.zip([high_windows, low_windows, close_slice])
       |> Enum.map(fn {high_window, low_window, close} ->
         calculate_williams_r_value(high_window, low_window, close)
       end)
-    
+
     # Build results
     results = build_williams_r_results(williams_r_values, period, overbought, oversold, data)
-    
+
     {:ok, results}
   end
 
   defp calculate_williams_r_value(highs, lows, close) do
     highest_high = Enum.max_by(highs, &Decimal.to_float/1)
     lowest_low = Enum.min_by(lows, &Decimal.to_float/1)
-    
+
     numerator = Decimal.sub(highest_high, close)
     denominator = Decimal.sub(highest_high, lowest_low)
-    
+
     case Decimal.equal?(denominator, Decimal.new("0")) do
-      true -> Decimal.new("-50.0")  # Neutral when no price range
+      # Neutral when no price range
+      true ->
+        Decimal.new("-50.0")
+
       false ->
         ratio = Decimal.div(numerator, denominator)
         williams_r = Decimal.mult(ratio, Decimal.new("-100"))
@@ -381,7 +401,7 @@ defmodule TradingIndicators.Momentum.WilliamsR do
     |> Enum.with_index(period - 1)
     |> Enum.map(fn {williams_r_value, index} ->
       timestamp = get_data_timestamp(original_data, index)
-      
+
       %{
         value: williams_r_value,
         timestamp: timestamp,
@@ -399,7 +419,7 @@ defmodule TradingIndicators.Momentum.WilliamsR do
   defp determine_signal(williams_r_value, overbought, oversold) do
     overbought_decimal = Decimal.new(overbought)
     oversold_decimal = Decimal.new(oversold)
-    
+
     cond do
       Decimal.gt?(williams_r_value, overbought_decimal) -> :overbought
       Decimal.lt?(williams_r_value, oversold_decimal) -> :oversold
@@ -420,7 +440,7 @@ defmodule TradingIndicators.Momentum.WilliamsR do
 
   defp update_buffer(buffer, new_value, max_size) do
     updated_buffer = buffer ++ [new_value]
-    
+
     if length(updated_buffer) > max_size do
       Enum.take(updated_buffer, -max_size)
     else

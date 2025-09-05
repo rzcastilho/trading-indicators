@@ -88,14 +88,13 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
       {:ok, result} = ChaikinMoneyFlow.calculate(data, period: 14)
   """
   @impl true
-  @spec calculate(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
          :ok <- Utils.validate_data_length(data, period),
          :ok <- validate_ohlcv_data(data) do
-      
       calculate_cmf_values(data, period)
     end
   end
@@ -120,12 +119,13 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -214,20 +214,21 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
       {:ok, new_state, result} = ChaikinMoneyFlow.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{period: period, money_flow_volumes: mf_volumes, volumes: volumes, count: count} = _state, 
-                   %{high: high, low: low, close: close, volume: volume} = data_point) do
-    
+  @spec update_state(map(), Types.ohlcv()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{period: period, money_flow_volumes: mf_volumes, volumes: volumes, count: count} = _state,
+        %{high: high, low: low, close: close, volume: volume} = data_point
+      ) do
     try do
       # Validate the data point
       with :ok <- validate_single_ohlcv_data(data_point) do
         new_count = count + 1
-        
+
         # Calculate Money Flow Volume for current data point
         {_mf_multiplier, mf_volume} = calculate_money_flow(high, low, close, volume)
         volume_decimal = Decimal.new(volume)
-        
+
         # Update buffers with new values
         new_mf_volumes = update_buffer(mf_volumes, mf_volume, period)
         new_volumes = update_buffer(volumes, volume_decimal, period)
@@ -243,12 +244,13 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
           # Calculate CMF
           mf_sum = Enum.reduce(new_mf_volumes, Decimal.new("0"), &Decimal.add/2)
           volume_sum = Enum.reduce(new_volumes, Decimal.new("0"), &Decimal.add/2)
-          
-          cmf_value = if Decimal.positive?(volume_sum) do
-            Decimal.div(mf_sum, volume_sum)
-          else
-            Decimal.new("0")
-          end
+
+          cmf_value =
+            if Decimal.positive?(volume_sum) do
+              Decimal.div(mf_sum, volume_sum)
+            else
+              Decimal.new("0")
+            end
 
           result = %{
             value: Decimal.round(cmf_value, @precision),
@@ -277,43 +279,55 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for ChaikinMoneyFlow streaming or data point missing HLCV fields",
-      operation: :update_state,
-      reason: "malformed state or invalid data point"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message:
+         "Invalid state format for ChaikinMoneyFlow streaming or data point missing HLCV fields",
+       operation: :update_state,
+       reason: "malformed state or invalid data point"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period) do
     {:error, Errors.invalid_period(period)}
   end
 
   defp validate_ohlcv_data([]), do: :ok
-  defp validate_ohlcv_data([%{high: high, low: low, close: close, volume: volume} = data_point | rest]) do
+
+  defp validate_ohlcv_data([
+         %{high: high, low: low, close: close, volume: volume} = data_point | rest
+       ]) do
     with :ok <- validate_hlcv_fields(high, low, close, volume, data_point) do
       validate_ohlcv_data(rest)
     end
   end
+
   defp validate_ohlcv_data([invalid | _rest]) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "ChaikinMoneyFlow requires data with high, low, close, and volume fields",
-      expected: "map with :high, :low, :close, :volume keys",
-      received: inspect(invalid)
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "ChaikinMoneyFlow requires data with high, low, close, and volume fields",
+       expected: "map with :high, :low, :close, :volume keys",
+       received: inspect(invalid)
+     }}
   end
 
-  defp validate_single_ohlcv_data(%{high: high, low: low, close: close, volume: volume} = data_point) do
+  defp validate_single_ohlcv_data(
+         %{high: high, low: low, close: close, volume: volume} = data_point
+       ) do
     validate_hlcv_fields(high, low, close, volume, data_point)
   end
+
   defp validate_single_ohlcv_data(invalid) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "ChaikinMoneyFlow requires data with high, low, close, and volume fields",
-      expected: "map with :high, :low, :close, :volume keys",
-      received: inspect(invalid)
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "ChaikinMoneyFlow requires data with high, low, close, and volume fields",
+       expected: "map with :high, :low, :close, :volume keys",
+       received: inspect(invalid)
+     }}
   end
 
   defp validate_hlcv_fields(high, low, close, volume, data_point) do
@@ -333,32 +347,37 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
       :ok
     end
   end
+
   defp validate_price_field(price, field, data_point) do
-    {:error, %Errors.InvalidDataFormat{
-      message: "#{String.capitalize(to_string(field))} price must be a Decimal",
-      expected: "Decimal.t()",
-      received: "#{inspect(price)} in #{inspect(data_point)}"
-    }}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "#{String.capitalize(to_string(field))} price must be a Decimal",
+       expected: "Decimal.t()",
+       received: "#{inspect(price)} in #{inspect(data_point)}"
+     }}
   end
 
   defp validate_volume(volume, _data_point) when is_integer(volume) and volume >= 0, do: :ok
+
   defp validate_volume(volume, data_point) do
-    {:error, %Errors.ValidationError{
-      message: "Volume must be a non-negative integer",
-      field: :volume,
-      value: volume,
-      constraint: "must be non-negative integer, got #{inspect(volume)} in #{inspect(data_point)}"
-    }}
+    {:error,
+     %Errors.ValidationError{
+       message: "Volume must be a non-negative integer",
+       field: :volume,
+       value: volume,
+       constraint: "must be non-negative integer, got #{inspect(volume)} in #{inspect(data_point)}"
+     }}
   end
 
   defp validate_price_relationship(high, low, _data_point) do
     if Decimal.gt?(low, high) do
-      {:error, %Errors.ValidationError{
-        message: "Low price cannot be greater than high price",
-        field: :price_relationship,
-        value: {low, high},
-        constraint: "low <= high"
-      }}
+      {:error,
+       %Errors.ValidationError{
+         message: "Low price cannot be greater than high price",
+         field: :price_relationship,
+         value: {low, high},
+         constraint: "low <= high"
+       }}
     else
       :ok
     end
@@ -370,14 +389,21 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
   defp calculate_cmf_values(data, period) when length(data) < period do
     {:ok, []}
   end
+
   defp calculate_cmf_values(data, period) do
     # Calculate Money Flow Volume for each data point
-    money_flow_data = Enum.map(data, fn data_point ->
-      {_mf_multiplier, mf_volume} = calculate_money_flow(
-        data_point.high, data_point.low, data_point.close, data_point.volume
-      )
-      {data_point, mf_volume, Decimal.new(data_point.volume)}
-    end)
+    money_flow_data =
+      Enum.map(data, fn data_point ->
+        {_mf_multiplier, mf_volume} =
+          calculate_money_flow(
+            data_point.high,
+            data_point.low,
+            data_point.close,
+            data_point.volume
+          )
+
+        {data_point, mf_volume, Decimal.new(data_point.volume)}
+      end)
 
     # Calculate CMF using sliding window
     results =
@@ -386,22 +412,24 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
       |> Enum.with_index(period - 1)
       |> Enum.map(fn {window, _index} ->
         # Sum Money Flow Volumes and Volumes for the period
-        {mf_sum, volume_sum} = 
+        {mf_sum, volume_sum} =
           window
-          |> Enum.reduce({Decimal.new("0"), Decimal.new("0")}, fn {_data_point, mf_vol, vol}, {mf_acc, vol_acc} ->
+          |> Enum.reduce({Decimal.new("0"), Decimal.new("0")}, fn {_data_point, mf_vol, vol},
+                                                                  {mf_acc, vol_acc} ->
             {Decimal.add(mf_acc, mf_vol), Decimal.add(vol_acc, vol)}
           end)
-        
+
         # Calculate CMF
-        cmf_value = if Decimal.positive?(volume_sum) do
-          Decimal.div(mf_sum, volume_sum)
-        else
-          Decimal.new("0")
-        end
-        
+        cmf_value =
+          if Decimal.positive?(volume_sum) do
+            Decimal.div(mf_sum, volume_sum)
+          else
+            Decimal.new("0")
+          end
+
         # Get the current data point for metadata and timestamp
         {current_data_point, current_mf_volume, _current_volume} = List.last(window)
-        
+
         %{
           value: Decimal.round(cmf_value, @precision),
           timestamp: get_timestamp(current_data_point),
@@ -424,7 +452,7 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
 
   defp calculate_money_flow(high, low, close, volume) do
     volume_decimal = Decimal.new(volume)
-    
+
     # Handle special case where High = Low (no price range)
     if Decimal.equal?(high, low) do
       # Money Flow Multiplier = 0 when there's no price range
@@ -437,19 +465,20 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
       high_minus_close = Decimal.sub(high, close)
       numerator = Decimal.sub(close_minus_low, high_minus_close)
       denominator = Decimal.sub(high, low)
-      
+
       mf_multiplier = Decimal.div(numerator, denominator)
       mf_volume = Decimal.mult(mf_multiplier, volume_decimal)
-      
+
       {mf_multiplier, mf_volume}
     end
   end
 
   defp update_buffer(buffer, new_value, max_size) do
     updated_buffer = buffer ++ [new_value]
-    
+
     if length(updated_buffer) > max_size do
-      Enum.take(updated_buffer, -max_size)  # Take last N elements
+      # Take last N elements
+      Enum.take(updated_buffer, -max_size)
     else
       updated_buffer
     end

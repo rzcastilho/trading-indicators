@@ -75,7 +75,7 @@ defmodule TradingIndicators do
   ## Advanced Features (Phase 6)
 
   ### Enhanced Streaming
-  
+
   - **Batch Processing**: `TradingIndicators.Streaming.process_batch/2` for efficient multi-point updates
   - **Stream Composition**: Chain multiple indicators with `TradingIndicators.Streaming.compose_streams/1`
   - **State Persistence**: Serialize/deserialize streaming states for fault tolerance

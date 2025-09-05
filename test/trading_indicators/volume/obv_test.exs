@@ -46,8 +46,10 @@ defmodule TradingIndicators.Volume.OBVTest do
 
       assert length(results) == 3
       assert Decimal.equal?(Enum.at(results, 0).value, Decimal.new("1000.00"))
-      assert Decimal.equal?(Enum.at(results, 1).value, Decimal.new("1000.00"))  # No change
-      assert Decimal.equal?(Enum.at(results, 2).value, Decimal.new("1000.00"))  # No change
+      # No change
+      assert Decimal.equal?(Enum.at(results, 1).value, Decimal.new("1000.00"))
+      # No change
+      assert Decimal.equal?(Enum.at(results, 2).value, Decimal.new("1000.00"))
     end
 
     test "handles single data point" do
@@ -70,8 +72,10 @@ defmodule TradingIndicators.Volume.OBVTest do
 
       assert length(results) == 3
       assert Decimal.equal?(Enum.at(results, 0).value, Decimal.new("1000.00"))
-      assert Decimal.equal?(Enum.at(results, 1).value, Decimal.new("1000.00"))  # Zero volume added
-      assert Decimal.equal?(Enum.at(results, 2).value, Decimal.new("200.00"))   # 1000 - 800
+      # Zero volume added
+      assert Decimal.equal?(Enum.at(results, 1).value, Decimal.new("1000.00"))
+      # 1000 - 800
+      assert Decimal.equal?(Enum.at(results, 2).value, Decimal.new("200.00"))
     end
 
     test "includes correct metadata" do
@@ -100,32 +104,40 @@ defmodule TradingIndicators.Volume.OBVTest do
     end
 
     test "returns error for invalid parameters" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        OBV.calculate(@test_data, period: 14)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               OBV.calculate(@test_data, period: 14)
     end
 
     test "returns error for invalid data format" do
       invalid_data = [%{price: Decimal.new("100"), vol: 1000}]
-      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} = 
-        OBV.calculate(invalid_data, [])
+
+      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} =
+               OBV.calculate(invalid_data, [])
     end
 
     test "returns error for negative close price" do
-      invalid_data = [%{close: Decimal.new("-100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
-      assert {:error, %TradingIndicators.Errors.ValidationError{}} = 
-        OBV.calculate(invalid_data, [])
+      invalid_data = [
+        %{close: Decimal.new("-100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}
+      ]
+
+      assert {:error, %TradingIndicators.Errors.ValidationError{}} =
+               OBV.calculate(invalid_data, [])
     end
 
     test "returns error for negative volume" do
-      invalid_data = [%{close: Decimal.new("100"), volume: -1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
-      assert {:error, %TradingIndicators.Errors.ValidationError{}} = 
-        OBV.calculate(invalid_data, [])
+      invalid_data = [
+        %{close: Decimal.new("100"), volume: -1000, timestamp: ~U[2024-01-01 09:30:00Z]}
+      ]
+
+      assert {:error, %TradingIndicators.Errors.ValidationError{}} =
+               OBV.calculate(invalid_data, [])
     end
 
     test "returns error for non-decimal close price" do
       invalid_data = [%{close: 100.0, volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
-      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} = 
-        OBV.calculate(invalid_data, [])
+
+      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} =
+               OBV.calculate(invalid_data, [])
     end
   end
 
@@ -135,13 +147,13 @@ defmodule TradingIndicators.Volume.OBVTest do
     end
 
     test "rejects non-empty options" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        OBV.validate_params(period: 14)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               OBV.validate_params(period: 14)
     end
 
     test "rejects non-keyword list options" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        OBV.validate_params("invalid")
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               OBV.validate_params("invalid")
     end
   end
 
@@ -208,16 +220,16 @@ defmodule TradingIndicators.Volume.OBVTest do
       invalid_state = %{invalid: true}
       data_point = %{close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}
 
-      assert {:error, %TradingIndicators.Errors.StreamStateError{}} = 
-        OBV.update_state(invalid_state, data_point)
+      assert {:error, %TradingIndicators.Errors.StreamStateError{}} =
+               OBV.update_state(invalid_state, data_point)
     end
 
     test "update_state/2 handles invalid data point" do
       state = OBV.init_state([])
       invalid_data = %{price: 100, vol: 1000}
 
-      assert {:error, %TradingIndicators.Errors.StreamStateError{}} = 
-        OBV.update_state(state, invalid_data)
+      assert {:error, %TradingIndicators.Errors.StreamStateError{}} =
+               OBV.update_state(state, invalid_data)
     end
   end
 
@@ -251,13 +263,14 @@ defmodule TradingIndicators.Volume.OBVTest do
 
     test "handles many periods efficiently" do
       # Generate 1000 data points
-      large_data = 
+      large_data =
         1..1000
         |> Enum.map(fn i ->
           price = if rem(i, 2) == 0, do: "100", else: "101"
+
           %{
-            close: Decimal.new(price), 
-            volume: 1000 + i, 
+            close: Decimal.new(price),
+            volume: 1000 + i,
             timestamp: DateTime.add(~U[2024-01-01 09:30:00Z], i, :second)
           }
         end)

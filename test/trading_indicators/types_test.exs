@@ -94,7 +94,11 @@ defmodule TradingIndicators.TypesTest do
 
     test "returns true for valid indicator result with map value" do
       result = %{
-        value: %{macd: Decimal.new("1.5"), signal: Decimal.new("1.2"), histogram: Decimal.new("0.3")},
+        value: %{
+          macd: Decimal.new("1.5"),
+          signal: Decimal.new("1.2"),
+          histogram: Decimal.new("0.3")
+        },
         timestamp: ~U[2024-01-01 09:30:00Z],
         metadata: %{fast: 12, slow: 26}
       }

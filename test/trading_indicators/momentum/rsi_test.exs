@@ -26,16 +26,16 @@ defmodule TradingIndicators.Momentum.RSITest do
       ]
 
       {:ok, results} = RSI.calculate(data, period: 14)
-      
+
       assert length(results) == 1
-      
+
       result = List.first(results)
       assert %{value: rsi_value, timestamp: _timestamp, metadata: metadata} = result
-      
+
       assert Decimal.is_decimal(rsi_value)
       assert Decimal.gt?(rsi_value, Decimal.new("0"))
       assert Decimal.lt?(rsi_value, Decimal.new("100"))
-      
+
       assert metadata.indicator == "RSI"
       assert metadata.period == 14
       assert metadata.overbought == 70
@@ -45,11 +45,12 @@ defmodule TradingIndicators.Momentum.RSITest do
 
     test "calculates RSI with custom parameters" do
       data = create_test_data(20)
-      
-      {:ok, results} = RSI.calculate(data, period: 10, overbought: 80, oversold: 20, smoothing: :sma)
-      
+
+      {:ok, results} =
+        RSI.calculate(data, period: 10, overbought: 80, oversold: 20, smoothing: :sma)
+
       assert length(results) > 0
-      
+
       result = List.first(results)
       assert result.metadata.period == 10
       assert result.metadata.overbought == 80
@@ -59,23 +60,34 @@ defmodule TradingIndicators.Momentum.RSITest do
 
     test "works with price series input" do
       prices = [
-        Decimal.new("100"), Decimal.new("102"), Decimal.new("101"), Decimal.new("103"),
-        Decimal.new("105"), Decimal.new("104"), Decimal.new("106"), Decimal.new("108"),
-        Decimal.new("107"), Decimal.new("109"), Decimal.new("111"), Decimal.new("110"),
-        Decimal.new("112"), Decimal.new("114"), Decimal.new("113")
+        Decimal.new("100"),
+        Decimal.new("102"),
+        Decimal.new("101"),
+        Decimal.new("103"),
+        Decimal.new("105"),
+        Decimal.new("104"),
+        Decimal.new("106"),
+        Decimal.new("108"),
+        Decimal.new("107"),
+        Decimal.new("109"),
+        Decimal.new("111"),
+        Decimal.new("110"),
+        Decimal.new("112"),
+        Decimal.new("114"),
+        Decimal.new("113")
       ]
-      
+
       {:ok, results} = RSI.calculate(prices, period: 14)
-      
+
       assert length(results) == 1
       assert Decimal.is_decimal(List.first(results).value)
     end
 
     test "returns error for insufficient data" do
       data = create_test_data(5)
-      
+
       {:error, error} = RSI.calculate(data, period: 14)
-      
+
       assert %TradingIndicators.Errors.InsufficientData{} = error
       assert error.required == 15
       assert error.provided == 5
@@ -83,27 +95,27 @@ defmodule TradingIndicators.Momentum.RSITest do
 
     test "validates parameters" do
       data = create_test_data(20)
-      
+
       # Invalid period
       {:error, error} = RSI.calculate(data, period: 0)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :period
-      
+
       # Invalid source
       {:error, error} = RSI.calculate(data, source: :invalid)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :source
-      
+
       # Invalid smoothing
       {:error, error} = RSI.calculate(data, smoothing: :invalid)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :smoothing
-      
+
       # Invalid overbought level
       {:error, error} = RSI.calculate(data, overbought: 150)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :overbought
-      
+
       # Invalid level relationship
       {:error, error} = RSI.calculate(data, overbought: 30, oversold: 70)
       assert %TradingIndicators.Errors.InvalidParams{} = error
@@ -114,7 +126,7 @@ defmodule TradingIndicators.Momentum.RSITest do
   describe "streaming functionality" do
     test "init_state/1 initializes proper state" do
       state = RSI.init_state(period: 14, overbought: 80, oversold: 20)
-      
+
       assert state.period == 14
       assert state.source == :close
       assert state.overbought == 80
@@ -128,15 +140,16 @@ defmodule TradingIndicators.Momentum.RSITest do
 
     test "update_state/2 processes data points correctly" do
       state = RSI.init_state(period: 4)
-      
+
       # First data point
       data_point1 = %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]}
       {:ok, state1, result1} = RSI.update_state(state, data_point1)
-      
+
       assert state1.count == 1
       assert is_nil(state1.previous_close) == false
-      assert is_nil(result1)  # Not enough data yet
-      
+      # Not enough data yet
+      assert is_nil(result1)
+
       # Add more data points
       data_points = [
         %{close: Decimal.new("102"), timestamp: ~U[2024-01-01 09:31:00Z]},
@@ -144,14 +157,16 @@ defmodule TradingIndicators.Momentum.RSITest do
         %{close: Decimal.new("103"), timestamp: ~U[2024-01-01 09:33:00Z]},
         %{close: Decimal.new("105"), timestamp: ~U[2024-01-01 09:34:00Z]}
       ]
-      
-      {final_state, final_result} = Enum.reduce(data_points, {state1, nil}, fn data_point, {acc_state, _} ->
-        {:ok, new_state, result} = RSI.update_state(acc_state, data_point)
-        {new_state, result}
-      end)
-      
+
+      {final_state, final_result} =
+        Enum.reduce(data_points, {state1, nil}, fn data_point, {acc_state, _} ->
+          {:ok, new_state, result} = RSI.update_state(acc_state, data_point)
+          {new_state, result}
+        end)
+
       assert final_state.count == 5
-      assert is_map(final_result)  # Should have a result now
+      # Should have a result now
+      assert is_map(final_result)
       assert final_result.metadata.indicator == "RSI"
       assert Decimal.is_decimal(final_result.value)
     end
@@ -160,7 +175,7 @@ defmodule TradingIndicators.Momentum.RSITest do
       # RSI streaming requires OHLCV data points, not raw prices
       # This test shows that raw Decimal values should be handled properly
       state = RSI.init_state(period: 3, source: :close)
-      
+
       # Create proper data points
       data_points = [
         %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]},
@@ -168,12 +183,13 @@ defmodule TradingIndicators.Momentum.RSITest do
         %{close: Decimal.new("101"), timestamp: ~U[2024-01-01 09:32:00Z]},
         %{close: Decimal.new("103"), timestamp: ~U[2024-01-01 09:33:00Z]}
       ]
-      
-      {_final_state, final_result} = Enum.reduce(data_points, {state, nil}, fn data_point, {acc_state, _} ->
-        {:ok, new_state, result} = RSI.update_state(acc_state, data_point)
-        {new_state, result}
-      end)
-      
+
+      {_final_state, final_result} =
+        Enum.reduce(data_points, {state, nil}, fn data_point, {acc_state, _} ->
+          {:ok, new_state, result} = RSI.update_state(acc_state, data_point)
+          {new_state, result}
+        end)
+
       assert is_map(final_result)
       assert Decimal.is_decimal(final_result.value)
     end
@@ -181,7 +197,7 @@ defmodule TradingIndicators.Momentum.RSITest do
     test "update_state/2 returns error for invalid state" do
       invalid_state = %{invalid: "state"}
       data_point = %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]}
-      
+
       {:error, error} = RSI.update_state(invalid_state, data_point)
       assert %TradingIndicators.Errors.StreamStateError{} = error
     end
@@ -217,10 +233,11 @@ defmodule TradingIndicators.Momentum.RSITest do
   # Helper function to create test data
   defp create_test_data(count) do
     base_price = 100
-    
+
     1..count
     |> Enum.map(fn i ->
       price = base_price + :rand.uniform(20) - 10
+
       %{
         close: Decimal.new(price),
         timestamp: DateTime.add(~U[2024-01-01 09:30:00Z], i * 60, :second)

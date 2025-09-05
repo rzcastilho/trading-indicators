@@ -68,25 +68,57 @@ defmodule TradingIndicatorsTest do
 
     test "extracts closing prices", %{data: data} do
       closes = TradingIndicators.extract_price_series(data, :close)
-      expected = [Decimal.new("103.0"), Decimal.new("106.0"), Decimal.new("105.0"), Decimal.new("108.0"), Decimal.new("107.0")]
+
+      expected = [
+        Decimal.new("103.0"),
+        Decimal.new("106.0"),
+        Decimal.new("105.0"),
+        Decimal.new("108.0"),
+        Decimal.new("107.0")
+      ]
+
       assert closes == expected
     end
 
     test "extracts opening prices", %{data: data} do
       opens = TradingIndicators.extract_price_series(data, :open)
-      expected = [Decimal.new("100.0"), Decimal.new("103.0"), Decimal.new("106.0"), Decimal.new("105.0"), Decimal.new("108.0")]
+
+      expected = [
+        Decimal.new("100.0"),
+        Decimal.new("103.0"),
+        Decimal.new("106.0"),
+        Decimal.new("105.0"),
+        Decimal.new("108.0")
+      ]
+
       assert opens == expected
     end
 
     test "extracts high prices", %{data: data} do
       highs = TradingIndicators.extract_price_series(data, :high)
-      expected = [Decimal.new("105.0"), Decimal.new("107.0"), Decimal.new("108.0"), Decimal.new("109.0"), Decimal.new("110.0")]
+
+      expected = [
+        Decimal.new("105.0"),
+        Decimal.new("107.0"),
+        Decimal.new("108.0"),
+        Decimal.new("109.0"),
+        Decimal.new("110.0")
+      ]
+
       assert highs == expected
     end
 
     test "extracts low prices", %{data: data} do
       lows = TradingIndicators.extract_price_series(data, :low)
-      expected = [Decimal.new("99.0"), Decimal.new("102.0"), Decimal.new("104.0"), Decimal.new("103.0"), Decimal.new("106.0")]
+
+      expected = [
+        Decimal.new("99.0"),
+        Decimal.new("102.0"),
+        Decimal.new("104.0"),
+        Decimal.new("103.0"),
+        Decimal.new("106.0")
+      ]
+
       assert lows == expected
     end
   end

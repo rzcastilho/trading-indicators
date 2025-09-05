@@ -6,9 +6,27 @@ defmodule TradingIndicators.Volume.VWAPTest do
   doctest VWAP
 
   @test_data [
-    %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-    %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]},
-    %{high: Decimal.new("108"), low: Decimal.new("104"), close: Decimal.new("105"), volume: 800, timestamp: ~U[2024-01-01 09:32:00Z]}
+    %{
+      high: Decimal.new("105"),
+      low: Decimal.new("99"),
+      close: Decimal.new("103"),
+      volume: 1000,
+      timestamp: ~U[2024-01-01 09:30:00Z]
+    },
+    %{
+      high: Decimal.new("107"),
+      low: Decimal.new("102"),
+      close: Decimal.new("106"),
+      volume: 1500,
+      timestamp: ~U[2024-01-01 09:31:00Z]
+    },
+    %{
+      high: Decimal.new("108"),
+      low: Decimal.new("104"),
+      close: Decimal.new("105"),
+      volume: 800,
+      timestamp: ~U[2024-01-01 09:32:00Z]
+    }
   ]
 
   describe "calculate/2" do
@@ -33,8 +51,20 @@ defmodule TradingIndicators.Volume.VWAPTest do
 
     test "calculates VWAP correctly with typical price variant" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{high: Decimal.new("107"), low: Decimal.new("102"), close: Decimal.new("106"), volume: 1500, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          high: Decimal.new("107"),
+          low: Decimal.new("102"),
+          close: Decimal.new("106"),
+          volume: 1500,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
 
       {:ok, results} = VWAP.calculate(data, variant: :typical)
@@ -55,7 +85,13 @@ defmodule TradingIndicators.Volume.VWAPTest do
 
     test "calculates VWAP correctly with weighted price variant" do
       data = [
-        %{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        }
       ]
 
       {:ok, results} = VWAP.calculate(data, variant: :weighted)
@@ -97,7 +133,15 @@ defmodule TradingIndicators.Volume.VWAPTest do
     end
 
     test "includes correct metadata" do
-      data = [%{high: Decimal.new("105"), low: Decimal.new("99"), close: Decimal.new("103"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
+      data = [
+        %{
+          high: Decimal.new("105"),
+          low: Decimal.new("99"),
+          close: Decimal.new("103"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        }
+      ]
 
       {:ok, results} = VWAP.calculate(data, variant: :typical, session_reset: :daily)
 
@@ -114,31 +158,44 @@ defmodule TradingIndicators.Volume.VWAPTest do
     end
 
     test "returns error for invalid variant" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        VWAP.calculate(@test_data, variant: :invalid)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               VWAP.calculate(@test_data, variant: :invalid)
     end
 
     test "returns error for invalid session reset" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        VWAP.calculate(@test_data, session_reset: :invalid)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               VWAP.calculate(@test_data, session_reset: :invalid)
     end
 
     test "returns error for invalid data format" do
       invalid_data = [%{price: Decimal.new("100"), vol: 1000}]
-      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} = 
-        VWAP.calculate(invalid_data, variant: :close)
+
+      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} =
+               VWAP.calculate(invalid_data, variant: :close)
     end
 
     test "returns error for negative volume" do
-      invalid_data = [%{close: Decimal.new("100"), volume: -1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
-      assert {:error, %TradingIndicators.Errors.ValidationError{}} = 
-        VWAP.calculate(invalid_data, [])
+      invalid_data = [
+        %{close: Decimal.new("100"), volume: -1000, timestamp: ~U[2024-01-01 09:30:00Z]}
+      ]
+
+      assert {:error, %TradingIndicators.Errors.ValidationError{}} =
+               VWAP.calculate(invalid_data, [])
     end
 
     test "returns error for high < low" do
-      invalid_data = [%{high: Decimal.new("99"), low: Decimal.new("105"), close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}]
-      assert {:error, %TradingIndicators.Errors.ValidationError{}} = 
-        VWAP.calculate(invalid_data, variant: :typical)
+      invalid_data = [
+        %{
+          high: Decimal.new("99"),
+          low: Decimal.new("105"),
+          close: Decimal.new("100"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        }
+      ]
+
+      assert {:error, %TradingIndicators.Errors.ValidationError{}} =
+               VWAP.calculate(invalid_data, variant: :typical)
     end
   end
 
@@ -151,18 +208,18 @@ defmodule TradingIndicators.Volume.VWAPTest do
     end
 
     test "rejects invalid variant" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        VWAP.validate_params(variant: :invalid)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               VWAP.validate_params(variant: :invalid)
     end
 
     test "rejects invalid session reset" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        VWAP.validate_params(session_reset: :invalid)
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               VWAP.validate_params(session_reset: :invalid)
     end
 
     test "rejects non-keyword list options" do
-      assert {:error, %TradingIndicators.Errors.InvalidParams{}} = 
-        VWAP.validate_params("invalid")
+      assert {:error, %TradingIndicators.Errors.InvalidParams{}} =
+               VWAP.validate_params("invalid")
     end
   end
 
@@ -205,7 +262,8 @@ defmodule TradingIndicators.Volume.VWAPTest do
       assert Decimal.equal?(new_state.cumulative_price_volume, Decimal.new("0"))
       assert Decimal.equal?(new_state.cumulative_volume, Decimal.new("0"))
       assert new_state.count == 1
-      assert result == nil  # No result for zero volume
+      # No result for zero volume
+      assert result == nil
     end
 
     test "update_state/2 handles session resets" do
@@ -225,7 +283,8 @@ defmodule TradingIndicators.Volume.VWAPTest do
       {:ok, new_state, result} = VWAP.update_state(state, data_point)
 
       # Should reset cumulative values and calculate fresh VWAP
-      assert Decimal.equal?(new_state.cumulative_price_volume, Decimal.new("51000"))  # 102 * 500
+      # 102 * 500
+      assert Decimal.equal?(new_state.cumulative_price_volume, Decimal.new("51000"))
       assert Decimal.equal?(new_state.cumulative_volume, Decimal.new("500"))
       assert Decimal.equal?(result.value, Decimal.new("102.000000"))
       assert result.metadata.session_reset_occurred == true
@@ -235,16 +294,16 @@ defmodule TradingIndicators.Volume.VWAPTest do
       invalid_state = %{invalid: true}
       data_point = %{close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]}
 
-      assert {:error, %TradingIndicators.Errors.StreamStateError{}} = 
-        VWAP.update_state(invalid_state, data_point)
+      assert {:error, %TradingIndicators.Errors.StreamStateError{}} =
+               VWAP.update_state(invalid_state, data_point)
     end
 
     test "update_state/2 handles invalid data point" do
       state = VWAP.init_state([])
       invalid_data = %{price: 100, vol: 1000}
 
-      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} = 
-        VWAP.update_state(state, invalid_data)
+      assert {:error, %TradingIndicators.Errors.InvalidDataFormat{}} =
+               VWAP.update_state(state, invalid_data)
     end
   end
 
@@ -253,7 +312,8 @@ defmodule TradingIndicators.Volume.VWAPTest do
       data = [
         %{close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
         %{close: Decimal.new("102"), volume: 1500, timestamp: ~U[2024-01-01 15:30:00Z]},
-        %{close: Decimal.new("104"), volume: 800, timestamp: ~U[2024-01-02 09:30:00Z]}  # Next day
+        # Next day
+        %{close: Decimal.new("104"), volume: 800, timestamp: ~U[2024-01-02 09:30:00Z]}
       ]
 
       {:ok, results} = VWAP.calculate(data, variant: :close, session_reset: :daily)
@@ -265,20 +325,25 @@ defmodule TradingIndicators.Volume.VWAPTest do
       assert Decimal.equal?(first.value, Decimal.new("100.000000"))
 
       second = Enum.at(results, 1)
-      expected_second = Decimal.div(Decimal.new("253000"), Decimal.new("2500"))  # (100*1000 + 102*1500) / 2500
+      # (100*1000 + 102*1500) / 2500
+      expected_second = Decimal.div(Decimal.new("253000"), Decimal.new("2500"))
       assert Decimal.equal?(second.value, expected_second)
 
       # Third day should reset
       third = Enum.at(results, 2)
-      assert Decimal.equal?(third.value, Decimal.new("104.000000"))  # Fresh start
+      # Fresh start
+      assert Decimal.equal?(third.value, Decimal.new("104.000000"))
     end
 
     test "weekly session reset works correctly" do
       # Monday to Tuesday (same week), then next Monday (different week)
       data = [
-        %{close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},  # Monday
-        %{close: Decimal.new("102"), volume: 1500, timestamp: ~U[2024-01-02 09:30:00Z]},  # Tuesday
-        %{close: Decimal.new("104"), volume: 800, timestamp: ~U[2024-01-08 09:30:00Z]}   # Next Monday
+        # Monday
+        %{close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
+        # Tuesday
+        %{close: Decimal.new("102"), volume: 1500, timestamp: ~U[2024-01-02 09:30:00Z]},
+        # Next Monday
+        %{close: Decimal.new("104"), volume: 800, timestamp: ~U[2024-01-08 09:30:00Z]}
       ]
 
       {:ok, results} = VWAP.calculate(data, variant: :close, session_reset: :weekly)
@@ -287,14 +352,17 @@ defmodule TradingIndicators.Volume.VWAPTest do
 
       # First week results should accumulate
       third = Enum.at(results, 2)
-      assert Decimal.equal?(third.value, Decimal.new("104.000000"))  # Reset for new week
+      # Reset for new week
+      assert Decimal.equal?(third.value, Decimal.new("104.000000"))
     end
 
     test "no session reset accumulates continuously" do
       data = [
         %{close: Decimal.new("100"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{close: Decimal.new("102"), volume: 1500, timestamp: ~U[2024-02-01 09:30:00Z]},  # Different month
-        %{close: Decimal.new("104"), volume: 800, timestamp: ~U[2024-03-01 09:30:00Z]}   # Different month
+        # Different month
+        %{close: Decimal.new("102"), volume: 1500, timestamp: ~U[2024-02-01 09:30:00Z]},
+        # Different month
+        %{close: Decimal.new("104"), volume: 800, timestamp: ~U[2024-03-01 09:30:00Z]}
       ]
 
       {:ok, results} = VWAP.calculate(data, variant: :close, session_reset: :none)
@@ -303,12 +371,18 @@ defmodule TradingIndicators.Volume.VWAPTest do
 
       # Should continuously accumulate across all periods
       third = Enum.at(results, 2)
-      total_pv = Decimal.new("100000")  # 100*1000
-        |> Decimal.add(Decimal.new("153000"))  # 102*1500
-        |> Decimal.add(Decimal.new("83200"))   # 104*800
-      total_v = Decimal.new("3300")  # 1000 + 1500 + 800
+      # 100*1000
+      total_pv =
+        Decimal.new("100000")
+        # 102*1500
+        |> Decimal.add(Decimal.new("153000"))
+        # 104*800
+        |> Decimal.add(Decimal.new("83200"))
+
+      # 1000 + 1500 + 800
+      total_v = Decimal.new("3300")
       expected = Decimal.div(total_pv, total_v)
-      
+
       assert Decimal.equal?(third.value, Decimal.round(expected, 6))
     end
   end

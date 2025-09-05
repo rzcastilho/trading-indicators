@@ -7,16 +7,16 @@ defmodule TradingIndicators.Momentum.MomentumTest do
   describe "calculate/2" do
     test "calculates Momentum with sufficient data" do
       data = create_test_data(15)
-      
+
       {:ok, results} = Momentum.calculate(data, period: 10)
-      
+
       assert length(results) == 5
-      
+
       result = List.first(results)
       assert %{value: momentum_value, timestamp: _timestamp, metadata: metadata} = result
-      
+
       assert Decimal.is_decimal(momentum_value)
-      
+
       assert metadata.indicator == "Momentum"
       assert metadata.period == 10
       assert metadata.source == :close
@@ -27,11 +27,11 @@ defmodule TradingIndicators.Momentum.MomentumTest do
 
     test "calculates Momentum with smoothing" do
       data = create_test_data(15)
-      
+
       {:ok, results} = Momentum.calculate(data, period: 8, smoothing: 3)
-      
+
       assert length(results) >= 1
-      
+
       result = List.first(results)
       assert result.metadata.period == 8
       assert result.metadata.smoothing == 3
@@ -40,11 +40,11 @@ defmodule TradingIndicators.Momentum.MomentumTest do
 
     test "calculates normalized Momentum" do
       data = create_test_data(15)
-      
+
       {:ok, results} = Momentum.calculate(data, period: 10, normalized: true)
-      
+
       assert length(results) >= 1
-      
+
       result = List.first(results)
       assert result.metadata.normalized == true
       assert Decimal.is_decimal(result.value)
@@ -52,23 +52,32 @@ defmodule TradingIndicators.Momentum.MomentumTest do
 
     test "works with price series input" do
       prices = [
-        Decimal.new("100"), Decimal.new("102"), Decimal.new("101"), Decimal.new("103"),
-        Decimal.new("105"), Decimal.new("104"), Decimal.new("106"), Decimal.new("108"),
-        Decimal.new("107"), Decimal.new("109"), Decimal.new("111"), Decimal.new("110"),
+        Decimal.new("100"),
+        Decimal.new("102"),
+        Decimal.new("101"),
+        Decimal.new("103"),
+        Decimal.new("105"),
+        Decimal.new("104"),
+        Decimal.new("106"),
+        Decimal.new("108"),
+        Decimal.new("107"),
+        Decimal.new("109"),
+        Decimal.new("111"),
+        Decimal.new("110"),
         Decimal.new("112")
       ]
-      
+
       {:ok, results} = Momentum.calculate(prices, period: 10)
-      
+
       assert length(results) >= 1
       assert Decimal.is_decimal(List.first(results).value)
     end
 
     test "returns error for insufficient data" do
       data = create_test_data(5)
-      
+
       {:error, error} = Momentum.calculate(data, period: 10)
-      
+
       assert %TradingIndicators.Errors.InsufficientData{} = error
       assert error.required == 11
       assert error.provided == 5
@@ -76,22 +85,22 @@ defmodule TradingIndicators.Momentum.MomentumTest do
 
     test "validates parameters correctly" do
       data = create_test_data(20)
-      
+
       # Invalid period
       {:error, error} = Momentum.calculate(data, period: 0)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :period
-      
+
       # Invalid source
       {:error, error} = Momentum.calculate(data, source: :invalid)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :source
-      
+
       # Invalid smoothing
       {:error, error} = Momentum.calculate(data, smoothing: 0)
       assert %TradingIndicators.Errors.InvalidParams{} = error
       assert error.param == :smoothing
-      
+
       # Invalid normalized
       {:error, error} = Momentum.calculate(data, normalized: "invalid")
       assert %TradingIndicators.Errors.InvalidParams{} = error
@@ -102,7 +111,7 @@ defmodule TradingIndicators.Momentum.MomentumTest do
   describe "streaming functionality" do
     test "init_state/1 initializes proper state" do
       state = Momentum.init_state(period: 10, source: :close, smoothing: 2, normalized: true)
-      
+
       assert state.momentum_period == 10
       assert state.source == :close
       assert state.smoothing == 2
@@ -114,7 +123,7 @@ defmodule TradingIndicators.Momentum.MomentumTest do
 
     test "update_state/2 processes data points correctly" do
       state = Momentum.init_state(period: 3, smoothing: 1)
-      
+
       data_points = [
         %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]},
         %{close: Decimal.new("102"), timestamp: ~U[2024-01-01 09:31:00Z]},
@@ -122,50 +131,57 @@ defmodule TradingIndicators.Momentum.MomentumTest do
         %{close: Decimal.new("103"), timestamp: ~U[2024-01-01 09:33:00Z]},
         %{close: Decimal.new("105"), timestamp: ~U[2024-01-01 09:34:00Z]}
       ]
-      
-      {final_state, final_result} = Enum.reduce(data_points, {state, nil}, fn data_point, {acc_state, _} ->
-        {:ok, new_state, result} = Momentum.update_state(acc_state, data_point)
-        {new_state, result}
-      end)
-      
+
+      {final_state, final_result} =
+        Enum.reduce(data_points, {state, nil}, fn data_point, {acc_state, _} ->
+          {:ok, new_state, result} = Momentum.update_state(acc_state, data_point)
+          {new_state, result}
+        end)
+
       assert final_state.count == 5
-      assert is_map(final_result)  # Should have a result after period + 1 data points
+      # Should have a result after period + 1 data points
+      assert is_map(final_result)
       assert final_result.metadata.indicator == "Momentum"
       assert Decimal.is_decimal(final_result.value)
     end
 
     test "update_state/2 processes smoothed momentum correctly" do
       state = Momentum.init_state(period: 2, smoothing: 2)
-      
+
       data_points = [
         %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]},
         %{close: Decimal.new("102"), timestamp: ~U[2024-01-01 09:31:00Z]},
         %{close: Decimal.new("104"), timestamp: ~U[2024-01-01 09:32:00Z]},
         %{close: Decimal.new("106"), timestamp: ~U[2024-01-01 09:33:00Z]}
       ]
-      
-      {final_state, final_result} = Enum.reduce(data_points, {state, nil}, fn data_point, {acc_state, _} ->
-        {:ok, new_state, result} = Momentum.update_state(acc_state, data_point)
-        {new_state, result}
-      end)
-      
+
+      {final_state, final_result} =
+        Enum.reduce(data_points, {state, nil}, fn data_point, {acc_state, _} ->
+          {:ok, new_state, result} = Momentum.update_state(acc_state, data_point)
+          {new_state, result}
+        end)
+
       assert final_state.count == 4
       assert final_state.smoothing == 2
-      assert is_map(final_result)  # Should have smoothed result
+      # Should have smoothed result
+      assert is_map(final_result)
     end
 
     test "update_state/2 works with price series" do
       state = Momentum.init_state(period: 2)
-      
+
       prices = [
-        Decimal.new("100"), Decimal.new("102"), Decimal.new("104")
+        Decimal.new("100"),
+        Decimal.new("102"),
+        Decimal.new("104")
       ]
-      
-      {_final_state, final_result} = Enum.reduce(prices, {state, nil}, fn price, {acc_state, _} ->
-        {:ok, new_state, result} = Momentum.update_state(acc_state, price)
-        {new_state, result}
-      end)
-      
+
+      {_final_state, final_result} =
+        Enum.reduce(prices, {state, nil}, fn price, {acc_state, _} ->
+          {:ok, new_state, result} = Momentum.update_state(acc_state, price)
+          {new_state, result}
+        end)
+
       assert is_map(final_result)
       assert Decimal.is_decimal(final_result.value)
     end
@@ -179,12 +195,12 @@ defmodule TradingIndicators.Momentum.MomentumTest do
         %{close: Decimal.new("102"), timestamp: ~U[2024-01-01 09:31:00Z]},
         %{close: Decimal.new("110"), timestamp: ~U[2024-01-01 09:32:00Z]}
       ]
-      
+
       {:ok, results} = Momentum.calculate(data_points, period: 2, normalized: false)
-      
+
       assert length(results) == 1
       result = List.first(results)
-      
+
       # Momentum = 110 - 100 = 10
       expected_momentum = Decimal.new("10.00")
       assert Decimal.equal?(result.value, expected_momentum)
@@ -197,12 +213,12 @@ defmodule TradingIndicators.Momentum.MomentumTest do
         %{close: Decimal.new("102"), timestamp: ~U[2024-01-01 09:31:00Z]},
         %{close: Decimal.new("110"), timestamp: ~U[2024-01-01 09:32:00Z]}
       ]
-      
+
       {:ok, results} = Momentum.calculate(data_points, period: 2, normalized: true)
-      
+
       assert length(results) == 1
       result = List.first(results)
-      
+
       # Normalized Momentum = (110 - 100) / 100 = 0.10
       expected_momentum = Decimal.new("0.10")
       assert Decimal.equal?(result.value, expected_momentum)
@@ -214,12 +230,12 @@ defmodule TradingIndicators.Momentum.MomentumTest do
         %{close: Decimal.new("0"), timestamp: ~U[2024-01-01 09:30:00Z]},
         %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:31:00Z]}
       ]
-      
+
       {:ok, results} = Momentum.calculate(data_points, period: 1, normalized: true)
-      
+
       assert length(results) == 1
       result = List.first(results)
-      
+
       # Should return 0 to avoid division by zero
       expected_momentum = Decimal.new("0")
       assert Decimal.equal?(result.value, expected_momentum)
@@ -233,12 +249,12 @@ defmodule TradingIndicators.Momentum.MomentumTest do
         %{close: Decimal.new("106"), timestamp: ~U[2024-01-01 09:32:00Z]},
         %{close: Decimal.new("108"), timestamp: ~U[2024-01-01 09:33:00Z]}
       ]
-      
+
       {:ok, results} = Momentum.calculate(data_points, period: 2, smoothing: 2)
-      
+
       assert length(results) == 1
       result = List.first(results)
-      
+
       # Raw momentum values would be: 6 (106-100), 6 (108-102)
       # Smoothed momentum = (6 + 6) / 2 = 6
       expected_momentum = Decimal.new("6.00")
@@ -248,23 +264,26 @@ defmodule TradingIndicators.Momentum.MomentumTest do
 
   describe "required_periods/0" do
     test "returns default required periods" do
-      assert Momentum.required_periods() == 11  # default period (10) + 1
+      # default period (10) + 1
+      assert Momentum.required_periods() == 11
     end
   end
 
   describe "required_periods/1" do
     test "returns configured required periods" do
-      assert Momentum.required_periods(period: 8, smoothing: 3) == 11  # 8 + 3
+      # 8 + 3
+      assert Momentum.required_periods(period: 8, smoothing: 3) == 11
     end
   end
 
   # Helper function to create test data
   defp create_test_data(count) do
     base_price = 100
-    
+
     1..count
     |> Enum.map(fn i ->
       price = base_price + :rand.uniform(20) - 10
+
       %{
         close: Decimal.new(price),
         timestamp: DateTime.add(~U[2024-01-01 09:30:00Z], i * 60, :second)

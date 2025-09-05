@@ -35,7 +35,7 @@ defmodule TradingIndicators.PipelineTest do
   describe "new/0" do
     test "creates empty pipeline builder" do
       builder = Pipeline.new()
-      
+
       assert builder.stages == []
       assert builder.dependencies == %{}
       assert builder.config.execution_mode == :sequential
@@ -45,12 +45,12 @@ defmodule TradingIndicators.PipelineTest do
 
   describe "add_stage/4" do
     test "adds stage to pipeline builder" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
+        |> Pipeline.add_stage("sma", SMA, period: 14)
 
       assert length(builder.stages) == 1
-      
+
       stage = hd(builder.stages)
       assert stage.id == "sma"
       assert stage.indicator == SMA
@@ -59,20 +59,20 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "adds multiple stages to builder" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma_fast", SMA, [period: 10])
-        |> Pipeline.add_stage("sma_slow", SMA, [period: 20])
+        |> Pipeline.add_stage("sma_fast", SMA, period: 10)
+        |> Pipeline.add_stage("sma_slow", SMA, period: 20)
 
       assert length(builder.stages) == 2
-      
+
       stage_ids = Enum.map(builder.stages, & &1.id)
       assert "sma_fast" in stage_ids
       assert "sma_slow" in stage_ids
     end
 
     test "supports custom input mapping" do
-      builder = 
+      builder =
         Pipeline.new()
         |> Pipeline.add_stage("sma", SMA, [period: 14], input_mapping: [source: :high])
 
@@ -83,21 +83,22 @@ defmodule TradingIndicators.PipelineTest do
 
   describe "add_dependency/3" do
     test "adds dependency between stages" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
-        |> Pipeline.add_stage("signal", SMA, [period: 20])
+        |> Pipeline.add_stage("sma", SMA, period: 14)
+        |> Pipeline.add_stage("signal", SMA, period: 20)
         |> Pipeline.add_dependency("signal", "sma")
 
       assert Map.get(builder.dependencies, "signal") == ["sma"]
     end
 
     test "supports multiple dependencies" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
-        |> Pipeline.add_stage("ema", SMA, [period: 14])  # Using SMA for simplicity
-        |> Pipeline.add_stage("signal", SMA, [period: 20])
+        |> Pipeline.add_stage("sma", SMA, period: 14)
+        # Using SMA for simplicity
+        |> Pipeline.add_stage("ema", SMA, period: 14)
+        |> Pipeline.add_stage("signal", SMA, period: 20)
         |> Pipeline.add_dependency("signal", "sma")
         |> Pipeline.add_dependency("signal", "ema")
 
@@ -108,12 +109,13 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "prevents duplicate dependencies" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
-        |> Pipeline.add_stage("signal", SMA, [period: 20])
+        |> Pipeline.add_stage("sma", SMA, period: 14)
+        |> Pipeline.add_stage("signal", SMA, period: 20)
         |> Pipeline.add_dependency("signal", "sma")
-        |> Pipeline.add_dependency("signal", "sma")  # Duplicate
+        # Duplicate
+        |> Pipeline.add_dependency("signal", "sma")
 
       dependencies = Map.get(builder.dependencies, "signal")
       assert length(dependencies) == 1
@@ -122,7 +124,7 @@ defmodule TradingIndicators.PipelineTest do
 
   describe "configure/2" do
     test "updates pipeline configuration" do
-      builder = 
+      builder =
         Pipeline.new()
         |> Pipeline.configure(%{execution_mode: :parallel, error_handling: :continue_on_error})
 
@@ -133,20 +135,21 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "merges with existing configuration" do
-      builder = 
+      builder =
         Pipeline.new()
         |> Pipeline.configure(%{parallel_stages: 8})
 
       assert builder.config.parallel_stages == 8
-      assert builder.config.execution_mode == :sequential  # Default preserved
+      # Default preserved
+      assert builder.config.execution_mode == :sequential
     end
   end
 
   describe "build/1" do
     test "builds valid pipeline configuration" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
+        |> Pipeline.add_stage("sma", SMA, period: 14)
 
       assert {:ok, pipeline} = Pipeline.build(builder)
       assert is_binary(pipeline.id)
@@ -163,9 +166,9 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "validates stage dependencies exist" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
+        |> Pipeline.add_stage("sma", SMA, period: 14)
         |> Pipeline.add_dependency("sma", "nonexistent_stage")
 
       assert {:error, error} = Pipeline.build(builder)
@@ -173,29 +176,30 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "detects circular dependencies" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
-        |> Pipeline.add_dependency("sma", "sma")  # Self-dependency
+        |> Pipeline.add_stage("sma", SMA, period: 14)
+        # Self-dependency
+        |> Pipeline.add_dependency("sma", "sma")
 
       assert {:error, error} = Pipeline.build(builder)
       assert error.message =~ "Circular dependency"
     end
 
     test "generates execution order" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
-        |> Pipeline.add_stage("signal", SMA, [period: 20])
+        |> Pipeline.add_stage("sma", SMA, period: 14)
+        |> Pipeline.add_stage("signal", SMA, period: 20)
         |> Pipeline.add_dependency("signal", "sma")
 
       assert {:ok, pipeline} = Pipeline.build(builder)
       assert is_list(pipeline.execution_order)
-      
+
       # Independent stages should come before dependent ones
       sma_index = Enum.find_index(pipeline.execution_order, &(&1 == "sma"))
       signal_index = Enum.find_index(pipeline.execution_order, &(&1 == "signal"))
-      
+
       # Either both are present or simple ordering applies
       if sma_index && signal_index do
         assert sma_index < signal_index
@@ -205,9 +209,9 @@ defmodule TradingIndicators.PipelineTest do
 
   describe "execute/2" do
     test "executes simple single-stage pipeline" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 2])
+        |> Pipeline.add_stage("sma", SMA, period: 2)
 
       {:ok, pipeline} = Pipeline.build(builder)
 
@@ -219,10 +223,10 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "executes multi-stage pipeline sequentially" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma_fast", SMA, [period: 2])
-        |> Pipeline.add_stage("sma_slow", SMA, [period: 3])
+        |> Pipeline.add_stage("sma_fast", SMA, period: 2)
+        |> Pipeline.add_stage("sma_slow", SMA, period: 3)
         |> Pipeline.configure(%{execution_mode: :sequential})
 
       {:ok, pipeline} = Pipeline.build(builder)
@@ -241,7 +245,7 @@ defmodule TradingIndicators.PipelineTest do
         def required_periods, do: 1
       end
 
-      builder = 
+      builder =
         Pipeline.new()
         |> Pipeline.add_stage("failing", FailingIndicator, [])
         |> Pipeline.configure(%{error_handling: :fail_fast})
@@ -252,19 +256,19 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "tracks execution metrics" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 2])
+        |> Pipeline.add_stage("sma", SMA, period: 2)
 
       {:ok, pipeline} = Pipeline.build(builder)
 
       assert {:ok, result} = Pipeline.execute(pipeline, @sample_data)
-      
+
       metrics = result.execution_metrics
       assert metrics.total_executions == 1
       assert metrics.total_processing_time > 0
       assert Map.has_key?(metrics.stage_metrics, "sma")
-      
+
       stage_metrics = metrics.stage_metrics["sma"]
       assert stage_metrics.executions == 1
       assert stage_metrics.error_count == 0
@@ -273,9 +277,9 @@ defmodule TradingIndicators.PipelineTest do
 
   describe "init_streaming/1 and stream_execute/2" do
     test "initializes pipeline for streaming" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 14])
+        |> Pipeline.add_stage("sma", SMA, period: 14)
 
       {:ok, pipeline} = Pipeline.build(builder)
 
@@ -286,9 +290,9 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "executes streaming pipeline with single data point" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 2])
+        |> Pipeline.add_stage("sma", SMA, period: 2)
 
       {:ok, pipeline} = Pipeline.build(builder)
       {:ok, pipeline_state} = Pipeline.init_streaming(pipeline)
@@ -308,7 +312,7 @@ defmodule TradingIndicators.PipelineTest do
         def update_state(_state, _data), do: {:error, "Streaming error"}
       end
 
-      builder = 
+      builder =
         Pipeline.new()
         |> Pipeline.add_stage("failing", StreamingFailingIndicator, [])
         |> Pipeline.configure(%{error_handling: :continue_on_error})
@@ -323,9 +327,9 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "updates streaming metrics" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 2])
+        |> Pipeline.add_stage("sma", SMA, period: 2)
 
       {:ok, pipeline} = Pipeline.build(builder)
       {:ok, initial_state} = Pipeline.init_streaming(pipeline)
@@ -333,7 +337,7 @@ defmodule TradingIndicators.PipelineTest do
       data_point = List.first(@sample_data)
 
       assert {:ok, _results, updated_state} = Pipeline.stream_execute(initial_state, data_point)
-      
+
       assert updated_state.metrics.total_executions == 1
       assert updated_state.metrics.last_execution_time > 0
     end
@@ -343,16 +347,36 @@ defmodule TradingIndicators.PipelineTest do
     test "merges multiple pipeline results" do
       # Create sample results
       result1 = %{
-        stage_results: %{"sma" => [%{value: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z], metadata: %{}}]},
+        stage_results: %{
+          "sma" => [
+            %{value: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z], metadata: %{}}
+          ]
+        },
         aggregated_result: [],
-        execution_metrics: %{total_executions: 1, total_processing_time: 1000, stage_metrics: %{}, error_count: 0, last_execution_time: 1000},
+        execution_metrics: %{
+          total_executions: 1,
+          total_processing_time: 1000,
+          stage_metrics: %{},
+          error_count: 0,
+          last_execution_time: 1000
+        },
         errors: []
       }
 
       result2 = %{
-        stage_results: %{"sma" => [%{value: Decimal.new("105"), timestamp: ~U[2024-01-01 09:31:00Z], metadata: %{}}]},
+        stage_results: %{
+          "sma" => [
+            %{value: Decimal.new("105"), timestamp: ~U[2024-01-01 09:31:00Z], metadata: %{}}
+          ]
+        },
         aggregated_result: [],
-        execution_metrics: %{total_executions: 1, total_processing_time: 1200, stage_metrics: %{}, error_count: 0, last_execution_time: 1200},
+        execution_metrics: %{
+          total_executions: 1,
+          total_processing_time: 1200,
+          stage_metrics: %{},
+          error_count: 0,
+          last_execution_time: 1200
+        },
         errors: []
       }
 
@@ -363,8 +387,19 @@ defmodule TradingIndicators.PipelineTest do
     end
 
     test "keeps latest result when aggregating with :latest mode" do
-      result1 = %{stage_results: %{"sma" => [1, 2]}, aggregated_result: [], execution_metrics: %{}, errors: []}
-      result2 = %{stage_results: %{"sma" => [3, 4]}, aggregated_result: [], execution_metrics: %{}, errors: []}
+      result1 = %{
+        stage_results: %{"sma" => [1, 2]},
+        aggregated_result: [],
+        execution_metrics: %{},
+        errors: []
+      }
+
+      result2 = %{
+        stage_results: %{"sma" => [3, 4]},
+        aggregated_result: [],
+        execution_metrics: %{},
+        errors: []
+      }
 
       aggregated = Pipeline.aggregate_results([result1, result2], :latest)
 
@@ -384,14 +419,14 @@ defmodule TradingIndicators.PipelineTest do
   describe "property tests" do
     @tag :property
     test "pipeline execution is deterministic" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 2])
+        |> Pipeline.add_stage("sma", SMA, period: 2)
 
       {:ok, pipeline} = Pipeline.build(builder)
 
       # Execute multiple times with same data
-      results = 
+      results =
         for _i <- 1..5 do
           {:ok, result} = Pipeline.execute(pipeline, @sample_data)
           result.stage_results["sma"]
@@ -404,11 +439,11 @@ defmodule TradingIndicators.PipelineTest do
 
     @tag :property
     test "stage execution order respects dependencies" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("stage1", SMA, [period: 2])
-        |> Pipeline.add_stage("stage2", SMA, [period: 2])
-        |> Pipeline.add_stage("stage3", SMA, [period: 2])
+        |> Pipeline.add_stage("stage1", SMA, period: 2)
+        |> Pipeline.add_stage("stage2", SMA, period: 2)
+        |> Pipeline.add_stage("stage3", SMA, period: 2)
         |> Pipeline.add_dependency("stage2", "stage1")
         |> Pipeline.add_dependency("stage3", "stage2")
 
@@ -434,11 +469,12 @@ defmodule TradingIndicators.PipelineTest do
   describe "integration tests" do
     @tag :integration
     test "complex pipeline with multiple indicators and dependencies" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma_short", SMA, [period: 2])
-        |> Pipeline.add_stage("sma_long", SMA, [period: 3])
-        |> Pipeline.add_stage("crossover_signal", SMA, [period: 2])  # Mock signal based on crossover
+        |> Pipeline.add_stage("sma_short", SMA, period: 2)
+        |> Pipeline.add_stage("sma_long", SMA, period: 3)
+        # Mock signal based on crossover
+        |> Pipeline.add_stage("crossover_signal", SMA, period: 2)
         |> Pipeline.add_dependency("crossover_signal", "sma_short")
         |> Pipeline.add_dependency("crossover_signal", "sma_long")
         |> Pipeline.configure(%{execution_mode: :sequential, error_handling: :fail_fast})
@@ -446,12 +482,12 @@ defmodule TradingIndicators.PipelineTest do
       {:ok, pipeline} = Pipeline.build(builder)
 
       assert {:ok, result} = Pipeline.execute(pipeline, @sample_data)
-      
+
       # Verify all stages executed
       assert Map.has_key?(result.stage_results, "sma_short")
       assert Map.has_key?(result.stage_results, "sma_long")
       assert Map.has_key?(result.stage_results, "crossover_signal")
-      
+
       # Verify metrics
       assert result.execution_metrics.total_executions == 1
       assert length(Map.keys(result.execution_metrics.stage_metrics)) == 3
@@ -459,15 +495,15 @@ defmodule TradingIndicators.PipelineTest do
 
     @tag :integration
     test "streaming pipeline maintains state across multiple updates" do
-      builder = 
+      builder =
         Pipeline.new()
-        |> Pipeline.add_stage("sma", SMA, [period: 3])
+        |> Pipeline.add_stage("sma", SMA, period: 3)
 
       {:ok, pipeline} = Pipeline.build(builder)
       {:ok, initial_state} = Pipeline.init_streaming(pipeline)
 
       # Process data points one by one
-      final_state = 
+      final_state =
         Enum.reduce(@sample_data, initial_state, fn data_point, acc_state ->
           {:ok, _results, new_state} = Pipeline.stream_execute(acc_state, data_point)
           new_state

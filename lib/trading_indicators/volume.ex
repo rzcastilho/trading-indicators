@@ -44,7 +44,7 @@ defmodule TradingIndicators.Volume do
   - `:period` - Number of periods for calculation (for CMF, default: 20)
   - `:variant` - VWAP calculation variant (`:close`, `:typical`, `:weighted`)
   - `:session_reset` - Session reset frequency for VWAP (`:daily`, `:weekly`, `:none`)
-  
+
   Specific indicators may have additional parameters. See individual indicator
   documentation for complete parameter lists.
 
@@ -118,17 +118,18 @@ defmodule TradingIndicators.Volume do
       {:ok, results} = TradingIndicators.Volume.calculate(OBV, data, [])
   """
   @spec calculate(indicator_module(), Types.data_series(), keyword()) ::
-    {:ok, Types.result_series()} | {:error, term()}
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(indicator, data, opts \\ []) do
     if indicator in available_indicators() do
       indicator.calculate(data, opts)
     else
-      {:error, %Errors.InvalidParams{
-        message: "Unknown volume indicator: #{inspect(indicator)}",
-        param: :indicator,
-        value: indicator,
-        expected: "one of #{inspect(available_indicators())}"
-      }}
+      {:error,
+       %Errors.InvalidParams{
+         message: "Unknown volume indicator: #{inspect(indicator)}",
+         param: :indicator,
+         value: indicator,
+         expected: "one of #{inspect(available_indicators())}"
+       }}
     end
   end
 
@@ -175,33 +176,34 @@ defmodule TradingIndicators.Volume do
 
       {:ok, new_state, result} = TradingIndicators.Volume.update_stream(state, data_point)
   """
-  @spec update_stream(map(), Types.ohlcv()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  @spec update_stream(map(), Types.ohlcv()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
   def update_stream(state, data_point) do
     # Try to determine indicator from state metadata or structure
     cond do
       # OBV state (has obv_value and previous_close)
       Map.has_key?(state, :obv_value) and Map.has_key?(state, :previous_close) ->
         OBV.update_state(state, data_point)
-      
+
       # VWAP state (has variant and session settings)  
       Map.has_key?(state, :variant) and Map.has_key?(state, :session_reset) ->
         VWAP.update_state(state, data_point)
-      
+
       # AccumulationDistribution state (has ad_line_value)
       Map.has_key?(state, :ad_line_value) ->
         AccumulationDistribution.update_state(state, data_point)
-        
+
       # ChaikinMoneyFlow state (has period and money_flow_volumes)
       Map.has_key?(state, :period) and Map.has_key?(state, :money_flow_volumes) ->
         ChaikinMoneyFlow.update_state(state, data_point)
-      
+
       true ->
-        {:error, %Errors.StreamStateError{
-          message: "Unable to determine volume indicator type from state",
-          operation: :update_stream,
-          reason: "unknown state format"
-        }}
+        {:error,
+         %Errors.StreamStateError{
+           message: "Unable to determine volume indicator type from state",
+           operation: :update_stream,
+           reason: "unknown state format"
+         }}
     end
   end
 
@@ -219,8 +221,8 @@ defmodule TradingIndicators.Volume do
 
       {:ok, results} = TradingIndicators.Volume.obv(data, [])
   """
-  @spec obv(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec obv(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def obv(data, opts \\ []), do: OBV.calculate(data, opts)
 
   @doc """
@@ -235,8 +237,8 @@ defmodule TradingIndicators.Volume do
 
       {:ok, results} = TradingIndicators.Volume.vwap(data, variant: :typical, session_reset: :daily)
   """
-  @spec vwap(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec vwap(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def vwap(data, opts \\ []), do: VWAP.calculate(data, opts)
 
   @doc """
@@ -251,9 +253,10 @@ defmodule TradingIndicators.Volume do
 
       {:ok, results} = TradingIndicators.Volume.accumulation_distribution(data, [])
   """
-  @spec accumulation_distribution(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
-  def accumulation_distribution(data, opts \\ []), do: AccumulationDistribution.calculate(data, opts)
+  @spec accumulation_distribution(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
+  def accumulation_distribution(data, opts \\ []),
+    do: AccumulationDistribution.calculate(data, opts)
 
   @doc """
   Convenience function to calculate Chaikin Money Flow.
@@ -267,8 +270,8 @@ defmodule TradingIndicators.Volume do
 
       {:ok, results} = TradingIndicators.Volume.chaikin_money_flow(data, period: 20)
   """
-  @spec chaikin_money_flow(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec chaikin_money_flow(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def chaikin_money_flow(data, opts \\ []), do: ChaikinMoneyFlow.calculate(data, opts)
 
   @doc """

@@ -45,7 +45,7 @@ defmodule TradingIndicators.Momentum do
   - `:source` - Price source (`:open`, `:high`, `:low`, `:close`)
   - `:overbought` - Overbought threshold level (RSI, Stochastic, Williams %R)
   - `:oversold` - Oversold threshold level (RSI, Stochastic, Williams %R)
-  
+
   Specific indicators may have additional parameters. See individual indicator
   documentation for complete parameter lists.
 
@@ -107,17 +107,18 @@ defmodule TradingIndicators.Momentum do
       {:ok, results} = TradingIndicators.Momentum.calculate(RSI, data, period: 14)
   """
   @spec calculate(indicator_module(), Types.data_series() | [Decimal.t()], keyword()) ::
-    {:ok, Types.result_series()} | {:error, term()}
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(indicator, data, opts \\ []) do
     if indicator in available_indicators() do
       indicator.calculate(data, opts)
     else
-      {:error, %Errors.InvalidParams{
-        message: "Unknown momentum indicator: #{inspect(indicator)}",
-        param: :indicator,
-        value: indicator,
-        expected: "one of #{inspect(available_indicators())}"
-      }}
+      {:error,
+       %Errors.InvalidParams{
+         message: "Unknown momentum indicator: #{inspect(indicator)}",
+         param: :indicator,
+         value: indicator,
+         expected: "one of #{inspect(available_indicators())}"
+       }}
     end
   end
 
@@ -164,41 +165,42 @@ defmodule TradingIndicators.Momentum do
 
       {:ok, new_state, result} = TradingIndicators.Momentum.update_stream(state, data_point)
   """
-  @spec update_stream(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  @spec update_stream(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
   def update_stream(state, data_point) do
     # Try to determine indicator from state metadata or structure
     cond do
       # RSI state (has gains, losses, avg_gain, avg_loss)
       Map.has_key?(state, :avg_gain) and Map.has_key?(state, :avg_loss) ->
         RSI.update_state(state, data_point)
-      
+
       # Stochastic state (has k_period, d_period, k_values)  
       Map.has_key?(state, :k_period) and Map.has_key?(state, :k_values) ->
         Stochastic.update_state(state, data_point)
-      
+
       # Williams %R state (has period and recent highs/lows)
       Map.has_key?(state, :recent_highs) and Map.has_key?(state, :recent_lows) ->
         WilliamsR.update_state(state, data_point)
-        
+
       # CCI state (has typical_prices and moving_averages)
       Map.has_key?(state, :typical_prices) and Map.has_key?(state, :mean_deviations) ->
         CCI.update_state(state, data_point)
-        
+
       # ROC state (has historical_prices)
       Map.has_key?(state, :historical_prices) and Map.has_key?(state, :roc_period) ->
         ROC.update_state(state, data_point)
-        
+
       # Momentum state (has previous_prices and momentum_period)
       Map.has_key?(state, :previous_prices) and Map.has_key?(state, :momentum_period) ->
         MomentumIndicator.update_state(state, data_point)
-      
+
       true ->
-        {:error, %Errors.StreamStateError{
-          message: "Unable to determine momentum indicator type from state",
-          operation: :update_stream,
-          reason: "unknown state format"
-        }}
+        {:error,
+         %Errors.StreamStateError{
+           message: "Unable to determine momentum indicator type from state",
+           operation: :update_stream,
+           reason: "unknown state format"
+         }}
     end
   end
 
@@ -216,8 +218,8 @@ defmodule TradingIndicators.Momentum do
 
       {:ok, results} = TradingIndicators.Momentum.rsi(data, period: 14)
   """
-  @spec rsi(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec rsi(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def rsi(data, opts \\ []), do: RSI.calculate(data, opts)
 
   @doc """
@@ -232,8 +234,8 @@ defmodule TradingIndicators.Momentum do
 
       {:ok, results} = TradingIndicators.Momentum.stochastic(data, k_period: 14, d_period: 3)
   """
-  @spec stochastic(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec stochastic(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def stochastic(data, opts \\ []), do: Stochastic.calculate(data, opts)
 
   @doc """
@@ -248,8 +250,8 @@ defmodule TradingIndicators.Momentum do
 
       {:ok, results} = TradingIndicators.Momentum.williams_r(data, period: 14)
   """
-  @spec williams_r(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec williams_r(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def williams_r(data, opts \\ []), do: WilliamsR.calculate(data, opts)
 
   @doc """
@@ -264,8 +266,8 @@ defmodule TradingIndicators.Momentum do
 
       {:ok, results} = TradingIndicators.Momentum.cci(data, period: 20)
   """
-  @spec cci(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec cci(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def cci(data, opts \\ []), do: CCI.calculate(data, opts)
 
   @doc """
@@ -280,8 +282,8 @@ defmodule TradingIndicators.Momentum do
 
       {:ok, results} = TradingIndicators.Momentum.roc(data, period: 12)
   """
-  @spec roc(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec roc(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def roc(data, opts \\ []), do: ROC.calculate(data, opts)
 
   @doc """
@@ -296,8 +298,8 @@ defmodule TradingIndicators.Momentum do
 
       {:ok, results} = TradingIndicators.Momentum.momentum(data, period: 10)
   """
-  @spec momentum(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec momentum(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def momentum(data, opts \\ []), do: MomentumIndicator.calculate(data, opts)
 
   @doc """

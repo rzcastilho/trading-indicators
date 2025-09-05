@@ -86,16 +86,16 @@ defmodule TradingIndicators.Trend.HMA do
       {:ok, result} = HMA.calculate(data, period: 4)
   """
   @impl true
-  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
          source <- Keyword.get(opts, :source, :close),
          sqrt_period <- calculate_sqrt_period(period),
-         min_required <- period + sqrt_period - 1,  # Conservative estimate
+         # Conservative estimate
+         min_required <- period + sqrt_period - 1,
          :ok <- Utils.validate_data_length(data, min_required) do
-      
       calculate_hma_values(data, period, source, sqrt_period)
     end
   end
@@ -125,12 +125,13 @@ defmodule TradingIndicators.Trend.HMA do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -206,7 +207,8 @@ defmodule TradingIndicators.Trend.HMA do
       source: source,
       wma_half_state: WMA.init_state(period: half_period, source: source),
       wma_full_state: WMA.init_state(period: period, source: source),
-      wma_sqrt_state: WMA.init_state(period: sqrt_period, source: :close),  # For HMA raw values
+      # For HMA raw values
+      wma_sqrt_state: WMA.init_state(period: sqrt_period, source: :close),
       raw_hma_values: [],
       count: 0
     }
@@ -233,23 +235,25 @@ defmodule TradingIndicators.Trend.HMA do
       {:ok, new_state, result} = HMA.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{
-    period: period,
-    half_period: half_period,
-    sqrt_period: sqrt_period,
-    source: source,
-    wma_half_state: wma_half_state,
-    wma_full_state: wma_full_state,
-    wma_sqrt_state: wma_sqrt_state,
-    raw_hma_values: raw_hma_values,
-    count: count
-  } = _state, data_point) do
-    
+  @spec update_state(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{
+          period: period,
+          half_period: half_period,
+          sqrt_period: sqrt_period,
+          source: source,
+          wma_half_state: wma_half_state,
+          wma_full_state: wma_full_state,
+          wma_sqrt_state: wma_sqrt_state,
+          raw_hma_values: raw_hma_values,
+          count: count
+        } = _state,
+        data_point
+      ) do
     try do
       new_count = count + 1
-      
+
       # Update both WMA states
       {:ok, new_wma_half_state, wma_half_result} = WMA.update_state(wma_half_state, data_point)
       {:ok, new_wma_full_state, wma_full_result} = WMA.update_state(wma_full_state, data_point)
@@ -258,15 +262,15 @@ defmodule TradingIndicators.Trend.HMA do
         {%{value: half_wma}, %{value: full_wma}} ->
           # Calculate raw HMA: (2 × WMA(n/2)) - WMA(n)
           raw_hma = Decimal.sub(Decimal.mult(half_wma, Decimal.new("2")), full_wma)
-          
+
           # Create synthetic data point for sqrt WMA calculation
           timestamp = get_timestamp(data_point)
           raw_hma_data_point = %{close: raw_hma, timestamp: timestamp}
-          
+
           # Update sqrt WMA state with raw HMA value
-          {:ok, new_wma_sqrt_state, sqrt_result} = 
+          {:ok, new_wma_sqrt_state, sqrt_result} =
             WMA.update_state(wma_sqrt_state, raw_hma_data_point)
-          
+
           new_raw_hma_values = update_raw_hma_buffer(raw_hma_values, raw_hma, sqrt_period)
 
           new_state = %{
@@ -307,7 +311,8 @@ defmodule TradingIndicators.Trend.HMA do
             source: source,
             wma_half_state: new_wma_half_state,
             wma_full_state: new_wma_full_state,
-            wma_sqrt_state: wma_sqrt_state,  # Unchanged since no raw HMA yet
+            # Unchanged since no raw HMA yet
+            wma_sqrt_state: wma_sqrt_state,
             raw_hma_values: raw_hma_values,
             count: new_count
           }
@@ -320,33 +325,38 @@ defmodule TradingIndicators.Trend.HMA do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for HMA streaming",
-      operation: :update_state,
-      reason: "malformed state"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for HMA streaming",
+       operation: :update_state,
+       reason: "malformed state"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 2, do: :ok
+
   defp validate_period(period) do
-    {:error, %Errors.InvalidParams{
-      message: "HMA period must be at least 2, got #{inspect(period)}",
-      param: :period,
-      value: period,
-      expected: "integer >= 2"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "HMA period must be at least 2, got #{inspect(period)}",
+       param: :period,
+       value: period,
+       expected: "integer >= 2"
+     }}
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid source: #{inspect(source)}",
-      param: :source,
-      value: source,
-      expected: "one of [:open, :high, :low, :close]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid source: #{inspect(source)}",
+       param: :source,
+       value: source,
+       expected: "one of [:open, :high, :low, :close]"
+     }}
   end
 
   defp calculate_sqrt_period(period) do
@@ -357,33 +367,37 @@ defmodule TradingIndicators.Trend.HMA do
 
   defp calculate_hma_values(data, period, source, sqrt_period) do
     half_period = div(period, 2)
-    
+
     # Calculate the two WMAs
     with {:ok, wma_half_results} <- WMA.calculate(data, period: half_period, source: source),
          {:ok, wma_full_results} <- WMA.calculate(data, period: period, source: source) do
-      
       # Align the WMA results by timestamp
       aligned_wmas = align_wma_results(wma_half_results, wma_full_results)
-      
+
       # Calculate raw HMA values
       raw_hma_values = calculate_raw_hma_values(aligned_wmas)
-      
+
       # Apply final WMA with sqrt period to raw HMA values
       case WMA.calculate(raw_hma_values, period: sqrt_period, source: :close) do
         {:ok, hma_results} ->
           # Convert to proper HMA result format
-          final_results = Enum.map(hma_results, fn result ->
-            %{result | 
-              value: Decimal.round(result.value, @precision),
-              metadata: %{
-                indicator: "HMA",
-                period: period,
-                source: source
+          final_results =
+            Enum.map(hma_results, fn result ->
+              %{
+                result
+                | value: Decimal.round(result.value, @precision),
+                  metadata: %{
+                    indicator: "HMA",
+                    period: period,
+                    source: source
+                  }
               }
-            }
-          end)
+            end)
+
           {:ok, final_results}
-        {:error, reason} -> {:error, reason}
+
+        {:error, reason} ->
+          {:error, reason}
       end
     end
   end
@@ -391,7 +405,7 @@ defmodule TradingIndicators.Trend.HMA do
   defp align_wma_results(wma_half_results, wma_full_results) do
     # Create map for half WMA lookup by timestamp
     half_map = Map.new(wma_half_results, fn result -> {result.timestamp, result.value} end)
-    
+
     # Find matching timestamps in full WMA results
     wma_full_results
     |> Enum.filter(fn full_result ->
@@ -407,7 +421,7 @@ defmodule TradingIndicators.Trend.HMA do
     Enum.map(aligned_wmas, fn {half_wma, full_wma, timestamp} ->
       # Raw HMA = (2 × WMA(n/2)) - WMA(n)
       raw_hma = Decimal.sub(Decimal.mult(half_wma, Decimal.new("2")), full_wma)
-      
+
       %{
         close: raw_hma,
         timestamp: timestamp
@@ -420,7 +434,7 @@ defmodule TradingIndicators.Trend.HMA do
 
   defp update_raw_hma_buffer(values, new_value, max_size) do
     updated_values = values ++ [new_value]
-    
+
     if length(updated_values) > max_size do
       Enum.take(updated_values, -max_size)
     else

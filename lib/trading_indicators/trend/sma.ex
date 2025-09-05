@@ -78,14 +78,13 @@ defmodule TradingIndicators.Trend.SMA do
       {:ok, result} = SMA.calculate(data, period: 2)
   """
   @impl true
-  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
          source <- Keyword.get(opts, :source, :close),
          :ok <- Utils.validate_data_length(data, period) do
-      
       prices = extract_prices(data, source)
       calculate_sma_values(prices, period, data)
     end
@@ -116,12 +115,13 @@ defmodule TradingIndicators.Trend.SMA do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -212,11 +212,12 @@ defmodule TradingIndicators.Trend.SMA do
       {:ok, new_state, result} = SMA.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{period: period, source: source, prices: prices, count: count} = _state, 
-                   data_point) do
-    
+  @spec update_state(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{period: period, source: source, prices: prices, count: count} = _state,
+        data_point
+      ) do
     try do
       price = extract_single_price(data_point, source)
       new_prices = update_price_buffer(prices, price, period)
@@ -232,7 +233,7 @@ defmodule TradingIndicators.Trend.SMA do
       if new_count >= period do
         sma_value = Utils.mean(new_prices) |> Decimal.round(@precision)
         timestamp = get_timestamp(data_point)
-        
+
         result = %{
           value: sma_value,
           timestamp: timestamp,
@@ -253,39 +254,46 @@ defmodule TradingIndicators.Trend.SMA do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for SMA streaming",
-      operation: :update_state,
-      reason: "malformed state"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for SMA streaming",
+       operation: :update_state,
+       reason: "malformed state"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period) do
     {:error, Errors.invalid_period(period)}
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid source: #{inspect(source)}",
-      param: :source,
-      value: source,
-      expected: "one of [:open, :high, :low, :close]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid source: #{inspect(source)}",
+       param: :source,
+       value: source,
+       expected: "one of [:open, :high, :low, :close]"
+     }}
   end
 
   defp extract_prices(data, source) when is_list(data) and length(data) > 0 do
     # Check if data is already a price series (list of decimals)
     case List.first(data) do
-      %Decimal{} -> data  # Already a price series
-      %{} = _ohlcv -> extract_ohlcv_prices(data, source)  # OHLCV data
-      _ -> data  # Assume it's some other price series format
+      # Already a price series
+      %Decimal{} -> data
+      # OHLCV data
+      %{} = _ohlcv -> extract_ohlcv_prices(data, source)
+      # Assume it's some other price series format
+      _ -> data
     end
   end
-  
+
   defp extract_ohlcv_prices(data, :close), do: Utils.extract_closes(data)
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
@@ -294,7 +302,7 @@ defmodule TradingIndicators.Trend.SMA do
   defp extract_single_price(%{} = data_point, source) do
     Map.fetch!(data_point, source)
   end
-  
+
   defp extract_single_price(price, _source) when Decimal.is_decimal(price) do
     price
   end
@@ -314,7 +322,7 @@ defmodule TradingIndicators.Trend.SMA do
       |> Enum.map(fn {window, index} ->
         sma_value = Utils.mean(window) |> Decimal.round(@precision)
         timestamp = get_data_timestamp(original_data, index)
-        
+
         %{
           value: sma_value,
           timestamp: timestamp,
@@ -333,7 +341,8 @@ defmodule TradingIndicators.Trend.SMA do
     if index < length(data) do
       case Enum.at(data, index) do
         %{timestamp: timestamp} -> timestamp
-        _ -> DateTime.utc_now()  # For price series without timestamps
+        # For price series without timestamps
+        _ -> DateTime.utc_now()
       end
     else
       DateTime.utc_now()
@@ -342,9 +351,10 @@ defmodule TradingIndicators.Trend.SMA do
 
   defp update_price_buffer(prices, new_price, period) do
     updated_prices = prices ++ [new_price]
-    
+
     if length(updated_prices) > period do
-      Enum.take(updated_prices, -period)  # Take last N elements
+      # Take last N elements
+      Enum.take(updated_prices, -period)
     else
       updated_prices
     end

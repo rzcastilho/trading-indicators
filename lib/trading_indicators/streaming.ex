@@ -101,7 +101,7 @@ defmodule TradingIndicators.Streaming do
       # function_exported?/3 may give false negatives for @optional_callbacks in test env
       try do
         _test_state = indicator.init_state(params)
-      rescue 
+      rescue
         UndefinedFunctionError ->
           raise ArgumentError, "Indicator #{inspect(indicator)} does not support streaming"
       end
@@ -159,31 +159,36 @@ defmodule TradingIndicators.Streaming do
   """
   @spec process_batch(streaming_state(), [Types.ohlcv()]) ::
           {:ok, Types.batch_result(), streaming_state()} | {:error, term()}
-  def process_batch(%{config: %{indicator: _indicator}} = state, data_batch) when is_list(data_batch) do
+  def process_batch(%{config: %{indicator: _indicator}} = state, data_batch)
+      when is_list(data_batch) do
     start_time = :os.system_time(:microsecond)
 
     try do
-      {results, final_state} = 
+      {results, final_state} =
         Enum.reduce(data_batch, {[], state}, fn data_point, {acc_results, acc_state} ->
           case update_stream_state(acc_state, data_point) do
             {:ok, new_state, result} when not is_nil(result) ->
               {[result | acc_results], new_state}
+
             {:ok, new_state, nil} ->
               {acc_results, new_state}
+
             {:error, reason} ->
               throw({:error, reason})
           end
         end)
 
       processing_time = :os.system_time(:microsecond) - start_time
-      
+
       batch_result = %{
         values: Enum.reverse(results),
         updated_state: final_state.indicator_state,
         processing_time: processing_time
       }
 
-      updated_metrics = update_batch_metrics(final_state.metrics, length(data_batch), processing_time)
+      updated_metrics =
+        update_batch_metrics(final_state.metrics, length(data_batch), processing_time)
+
       updated_state = %{final_state | metrics: updated_metrics, last_update: DateTime.utc_now()}
 
       {:ok, batch_result, updated_state}
@@ -195,7 +200,12 @@ defmodule TradingIndicators.Streaming do
   end
 
   def process_batch(_state, _data_batch) do
-    {:error, %Errors.InvalidDataFormat{message: "Data batch must be a list", expected: "list", received: "invalid"}}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "Data batch must be a list",
+       expected: "list",
+       received: "invalid"
+     }}
   end
 
   @doc """
@@ -233,7 +243,7 @@ defmodule TradingIndicators.Streaming do
       {:ok, primary_state} = init_stream(primary_config)
 
       # Initialize dependent streams
-      dependent_states = 
+      dependent_states =
         composition_config
         |> Map.get(:dependent_streams, [])
         |> Enum.map(fn config ->
@@ -244,7 +254,9 @@ defmodule TradingIndicators.Streaming do
         end)
 
       # Build dependency graph (simplified for now)
-      dependency_graph = build_dependency_graph(primary_config, Map.get(composition_config, :dependent_streams, []))
+      dependency_graph =
+        build_dependency_graph(primary_config, Map.get(composition_config, :dependent_streams, []))
+
       execution_order = topological_sort(dependency_graph)
 
       composition_state = %{
@@ -286,7 +298,8 @@ defmodule TradingIndicators.Streaming do
       iex> is_binary(serialized)
       true
   """
-  @spec serialize_state(streaming_state() | composition_state()) :: {:ok, binary()} | {:error, term()}
+  @spec serialize_state(streaming_state() | composition_state()) ::
+          {:ok, binary()} | {:error, term()}
   def serialize_state(state) do
     try do
       serialized = :erlang.term_to_binary(state, [:compressed])
@@ -320,7 +333,8 @@ defmodule TradingIndicators.Streaming do
       iex> deserialized_state.config.indicator
       TradingIndicators.Trend.SMA
   """
-  @spec deserialize_state(binary()) :: {:ok, streaming_state() | composition_state()} | {:error, term()}
+  @spec deserialize_state(binary()) ::
+          {:ok, streaming_state() | composition_state()} | {:error, term()}
   def deserialize_state(serialized_state) when is_binary(serialized_state) do
     try do
       state = :erlang.binary_to_term(serialized_state, [:safe])
@@ -331,7 +345,12 @@ defmodule TradingIndicators.Streaming do
   end
 
   def deserialize_state(_serialized_state) do
-    {:error, %Errors.InvalidDataFormat{message: "Serialized state must be binary", expected: "binary", received: "invalid"}}
+    {:error,
+     %Errors.InvalidDataFormat{
+       message: "Serialized state must be binary",
+       expected: "binary",
+       received: "invalid"
+     }}
   end
 
   @doc """
@@ -355,9 +374,13 @@ defmodule TradingIndicators.Streaming do
   """
   @spec stream_metrics(streaming_state() | composition_state()) :: streaming_metrics() | map()
   def stream_metrics(%{metrics: metrics}), do: metrics
-  def stream_metrics(%{primary_stream: %{metrics: primary_metrics}, dependent_streams: dependent_streams}) do
+
+  def stream_metrics(%{
+        primary_stream: %{metrics: primary_metrics},
+        dependent_streams: dependent_streams
+      }) do
     dependent_metrics = Enum.map(dependent_streams, fn %{metrics: metrics} -> metrics end)
-    
+
     %{
       primary: primary_metrics,
       dependents: dependent_metrics,
@@ -382,12 +405,15 @@ defmodule TradingIndicators.Streaming do
   """
   @spec update_stream_state(streaming_state(), Types.ohlcv()) ::
           {:ok, streaming_state(), Types.indicator_result() | nil} | {:error, term()}
-  def update_stream_state(%{config: %{indicator: indicator}, indicator_state: current_state} = state, data_point) do
+  def update_stream_state(
+        %{config: %{indicator: indicator}, indicator_state: current_state} = state,
+        data_point
+      ) do
     case indicator.update_state(current_state, data_point) do
       {:ok, new_indicator_state, result} ->
         updated_state = %{state | indicator_state: new_indicator_state}
         {:ok, updated_state, result}
-      
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -408,17 +434,20 @@ defmodule TradingIndicators.Streaming do
   defp update_batch_metrics(metrics, batch_size, processing_time) do
     total_processed = metrics.total_processed + batch_size
     total_time = metrics.processing_time + processing_time
-    
-    throughput = if total_time > 0 do
-      total_processed * 1_000_000 / total_time  # points per second
-    else
-      0.0
-    end
 
-    %{metrics |
-      total_processed: total_processed,
-      processing_time: total_time,
-      throughput: throughput
+    throughput =
+      if total_time > 0 do
+        # points per second
+        total_processed * 1_000_000 / total_time
+      else
+        0.0
+      end
+
+    %{
+      metrics
+      | total_processed: total_processed,
+        processing_time: total_time,
+        throughput: throughput
     }
   end
 
@@ -427,7 +456,7 @@ defmodule TradingIndicators.Streaming do
     # analyze the actual dependencies between indicators
     primary_id = indicator_id(primary_config.indicator)
     dependent_ids = Enum.map(dependent_configs, fn config -> indicator_id(config.indicator) end)
-    
+
     Map.put(%{}, primary_id, dependent_ids)
   end
 

@@ -1,6 +1,6 @@
 defmodule TradingIndicators.Types do
   require Decimal
-  
+
   @moduledoc """
   Common data structures and type definitions for the TradingIndicators library.
 
@@ -301,7 +301,7 @@ defmodule TradingIndicators.Types do
 
   @typedoc """
   Streaming state configuration for indicators.
-  
+
   Contains configuration and state information for streaming indicators
   including buffer management and composition settings.
   """
@@ -314,7 +314,7 @@ defmodule TradingIndicators.Types do
 
   @typedoc """
   Batch processing result containing multiple indicator values.
-  
+
   Used for efficient processing of multiple data points at once
   in streaming scenarios.
   """
@@ -326,7 +326,7 @@ defmodule TradingIndicators.Types do
 
   @typedoc """
   Pipeline configuration defining a sequence of indicators.
-  
+
   Describes how indicators should be chained together, including
   dependencies and data flow between stages.
   """
@@ -405,7 +405,7 @@ defmodule TradingIndicators.Types do
 
   @typedoc """
   Data quality assessment result.
-  
+
   Contains information about data integrity, completeness,
   and quality metrics for time series data.
   """

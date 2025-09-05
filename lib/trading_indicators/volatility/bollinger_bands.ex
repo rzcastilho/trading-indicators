@@ -92,15 +92,14 @@ defmodule TradingIndicators.Volatility.BollingerBands do
       {:ok, result} = BollingerBands.calculate(data, period: 20, multiplier: 2.0)
   """
   @impl true
-  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, [Types.bollinger_result()]} | {:error, term()}
+  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, [Types.bollinger_result()]} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
          multiplier <- get_multiplier(opts),
          source <- Keyword.get(opts, :source, :close),
          :ok <- Utils.validate_data_length(data, period) do
-      
       prices = extract_prices(data, source)
       calculate_bollinger_values(prices, period, multiplier, source, data)
     end
@@ -133,12 +132,13 @@ defmodule TradingIndicators.Volatility.BollingerBands do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -230,11 +230,13 @@ defmodule TradingIndicators.Volatility.BollingerBands do
       {:ok, new_state, result} = BollingerBands.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.bollinger_result() | nil} | {:error, term()}
-  def update_state(%{period: period, multiplier: multiplier, source: source, 
-                     prices: prices, count: count} = _state, data_point) do
-    
+  @spec update_state(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.bollinger_result() | nil} | {:error, term()}
+  def update_state(
+        %{period: period, multiplier: multiplier, source: source, prices: prices, count: count} =
+          _state,
+        data_point
+      ) do
     try do
       price = extract_single_price(data_point, source)
       new_prices = update_price_buffer(prices, price, period)
@@ -251,14 +253,16 @@ defmodule TradingIndicators.Volatility.BollingerBands do
       if new_count >= period do
         bollinger_result = calculate_single_bollinger(new_prices, multiplier, price)
         timestamp = get_timestamp(data_point)
-        
+
         result = Map.put(bollinger_result, :timestamp, timestamp)
-        result = Map.put(result, :metadata, %{
-          indicator: "BOLLINGER",
-          period: period,
-          multiplier: multiplier,
-          source: source
-        })
+
+        result =
+          Map.put(result, :metadata, %{
+            indicator: "BOLLINGER",
+            period: period,
+            multiplier: multiplier,
+            source: source
+          })
 
         {:ok, new_state, result}
       else
@@ -270,56 +274,65 @@ defmodule TradingIndicators.Volatility.BollingerBands do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for BollingerBands streaming",
-      operation: :update_state,
-      reason: "malformed state"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for BollingerBands streaming",
+       operation: :update_state,
+       reason: "malformed state"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 2, do: :ok
+
   defp validate_period(period) do
-    {:error, %Errors.InvalidParams{
-      message: "Period must be an integer >= 2 for Bollinger Bands calculation, got: #{inspect(period)}",
-      param: :period,
-      value: period,
-      expected: "integer >= 2"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message:
+         "Period must be an integer >= 2 for Bollinger Bands calculation, got: #{inspect(period)}",
+       param: :period,
+       value: period,
+       expected: "integer >= 2"
+     }}
   end
 
   defp validate_multiplier(%Decimal{} = multiplier) do
     if Decimal.positive?(multiplier) do
       :ok
     else
-      {:error, %Errors.InvalidParams{
-        message: "Multiplier must be a positive number, got: #{inspect(multiplier)}",
-        param: :multiplier,
-        value: multiplier,
-        expected: "positive Decimal"
-      }}
+      {:error,
+       %Errors.InvalidParams{
+         message: "Multiplier must be a positive number, got: #{inspect(multiplier)}",
+         param: :multiplier,
+         value: multiplier,
+         expected: "positive Decimal"
+       }}
     end
   end
 
   defp validate_multiplier(multiplier) when is_number(multiplier) and multiplier > 0, do: :ok
+
   defp validate_multiplier(multiplier) do
-    {:error, %Errors.InvalidParams{
-      message: "Multiplier must be a positive number, got: #{inspect(multiplier)}",
-      param: :multiplier,
-      value: multiplier,
-      expected: "positive number"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Multiplier must be a positive number, got: #{inspect(multiplier)}",
+       param: :multiplier,
+       value: multiplier,
+       expected: "positive number"
+     }}
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid source: #{inspect(source)}",
-      param: :source,
-      value: source,
-      expected: "one of [:open, :high, :low, :close]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid source: #{inspect(source)}",
+       param: :source,
+       value: source,
+       expected: "one of [:open, :high, :low, :close]"
+     }}
   end
 
   defp get_multiplier(opts) do
@@ -327,19 +340,23 @@ defmodule TradingIndicators.Volatility.BollingerBands do
       %Decimal{} = multiplier -> multiplier
       multiplier when is_float(multiplier) -> Decimal.from_float(multiplier)
       multiplier when is_integer(multiplier) -> Decimal.new(multiplier)
-      multiplier -> multiplier  # Let validation handle it
+      # Let validation handle it
+      multiplier -> multiplier
     end
   end
 
   defp extract_prices(data, source) when is_list(data) and length(data) > 0 do
     # Check if data is already a price series (list of decimals)
     case List.first(data) do
-      %Decimal{} -> data  # Already a price series
-      %{} = _ohlcv -> extract_ohlcv_prices(data, source)  # OHLCV data
-      _ -> data  # Assume it's some other price series format
+      # Already a price series
+      %Decimal{} -> data
+      # OHLCV data
+      %{} = _ohlcv -> extract_ohlcv_prices(data, source)
+      # Assume it's some other price series format
+      _ -> data
     end
   end
-  
+
   defp extract_ohlcv_prices(data, :close), do: Utils.extract_closes(data)
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
@@ -369,7 +386,7 @@ defmodule TradingIndicators.Volatility.BollingerBands do
         current_price = Enum.at(prices, index)
         bollinger_result = calculate_single_bollinger(window, multiplier, current_price)
         timestamp = get_data_timestamp(original_data, index)
-        
+
         bollinger_result
         |> Map.put(:timestamp, timestamp)
         |> Map.put(:metadata, %{
@@ -386,32 +403,36 @@ defmodule TradingIndicators.Volatility.BollingerBands do
   defp calculate_single_bollinger(prices, multiplier, current_price) do
     # Calculate middle band (SMA)
     middle_band = Utils.mean(prices)
-    
+
     # Calculate standard deviation
     std_dev = Utils.standard_deviation(prices)
-    
+
     # Calculate upper and lower bands
     deviation = Decimal.mult(multiplier, std_dev)
     upper_band = Decimal.add(middle_band, deviation)
     lower_band = Decimal.sub(middle_band, deviation)
-    
+
     # Calculate %B
     band_range = Decimal.sub(upper_band, lower_band)
-    percent_b = if Decimal.equal?(band_range, Decimal.new("0")) do
-      Decimal.new("50.0")  # Middle value when bands collapse
-    else
-      price_from_lower = Decimal.sub(current_price, lower_band)
-      ratio = Decimal.div(price_from_lower, band_range)
-      Decimal.mult(ratio, Decimal.new("100"))
-    end
-    
+
+    percent_b =
+      if Decimal.equal?(band_range, Decimal.new("0")) do
+        # Middle value when bands collapse
+        Decimal.new("50.0")
+      else
+        price_from_lower = Decimal.sub(current_price, lower_band)
+        ratio = Decimal.div(price_from_lower, band_range)
+        Decimal.mult(ratio, Decimal.new("100"))
+      end
+
     # Calculate Bandwidth
-    bandwidth = if Decimal.equal?(middle_band, Decimal.new("0")) do
-      Decimal.new("0.0")
-    else
-      ratio = Decimal.div(band_range, middle_band)
-      Decimal.mult(ratio, Decimal.new("100"))
-    end
+    bandwidth =
+      if Decimal.equal?(middle_band, Decimal.new("0")) do
+        Decimal.new("0.0")
+      else
+        ratio = Decimal.div(band_range, middle_band)
+        Decimal.mult(ratio, Decimal.new("100"))
+      end
 
     %{
       upper_band: Decimal.round(upper_band, @precision),
@@ -426,7 +447,8 @@ defmodule TradingIndicators.Volatility.BollingerBands do
     if index < length(data) do
       case Enum.at(data, index) do
         %{timestamp: timestamp} -> timestamp
-        _ -> DateTime.utc_now()  # For price series without timestamps
+        # For price series without timestamps
+        _ -> DateTime.utc_now()
       end
     else
       DateTime.utc_now()
@@ -435,9 +457,10 @@ defmodule TradingIndicators.Volatility.BollingerBands do
 
   defp update_price_buffer(prices, new_price, period) do
     updated_prices = prices ++ [new_price]
-    
+
     if length(updated_prices) > period do
-      Enum.take(updated_prices, -period)  # Take last N elements
+      # Take last N elements
+      Enum.take(updated_prices, -period)
     else
       updated_prices
     end

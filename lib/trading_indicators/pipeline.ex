@@ -124,7 +124,8 @@ defmodule TradingIndicators.Pipeline do
       iex> hd(updated_builder.stages).id
       "sma"
   """
-  @spec add_stage(pipeline_builder(), String.t(), module(), keyword(), keyword()) :: pipeline_builder()
+  @spec add_stage(pipeline_builder(), String.t(), module(), keyword(), keyword()) ::
+          pipeline_builder()
   def add_stage(builder, id, indicator, params, opts \\ []) do
     stage = %{
       id: id,
@@ -163,7 +164,7 @@ defmodule TradingIndicators.Pipeline do
   def add_dependency(builder, dependent_stage, dependency_stage) do
     current_deps = Map.get(builder.dependencies, dependent_stage, [])
     updated_deps = [dependency_stage | current_deps] |> Enum.uniq()
-    
+
     dependencies = Map.put(builder.dependencies, dependent_stage, updated_deps)
     %{builder | dependencies: dependencies}
   end
@@ -218,9 +219,8 @@ defmodule TradingIndicators.Pipeline do
   def build(builder) do
     with :ok <- validate_pipeline(builder),
          execution_order <- resolve_execution_order(builder) do
-      
       pipeline_id = "pipeline_" <> Base.encode16(:crypto.strong_rand_bytes(8), case: :lower)
-      
+
       pipeline_config = %{
         id: pipeline_id,
         stages: Enum.reverse(builder.stages),
@@ -266,18 +266,19 @@ defmodule TradingIndicators.Pipeline do
           {:ok, execution_result()} | {:error, term()}
   def execute(%{stages: stages, execution_mode: mode} = pipeline_config, data) do
     start_time = :os.system_time(:microsecond)
-    
+
     try do
-      stage_results = case mode do
-        :sequential -> execute_sequential(stages, data, pipeline_config)
-        :parallel -> execute_parallel(stages, data, pipeline_config)
-      end
+      stage_results =
+        case mode do
+          :sequential -> execute_sequential(stages, data, pipeline_config)
+          :parallel -> execute_parallel(stages, data, pipeline_config)
+        end
 
       execution_time = :os.system_time(:microsecond) - start_time
-      
+
       # Aggregate results if configured
       aggregated_result = aggregate_stage_results(stage_results, pipeline_config)
-      
+
       metrics = build_execution_metrics(stage_results, execution_time, pipeline_config)
 
       result = %{
@@ -320,7 +321,7 @@ defmodule TradingIndicators.Pipeline do
   def init_streaming(%{stages: stages} = pipeline_config) do
     try do
       # Initialize streaming state for each stage that supports it
-      stage_states = 
+      stage_states =
         stages
         |> Enum.reduce(%{}, fn stage, acc ->
           if function_exported?(stage.indicator, :init_state, 1) do
@@ -372,20 +373,20 @@ defmodule TradingIndicators.Pipeline do
           {:ok, map(), Types.pipeline_state()} | {:error, term()}
   def stream_execute(%{config: config, stage_states: stage_states} = pipeline_state, data_point) do
     start_time = :os.system_time(:microsecond)
-    
+
     try do
       execution_order = Map.get(config, :execution_order, Enum.map(config.stages, & &1.id))
-      
-      {stage_results, updated_states} = 
+
+      {stage_results, updated_states} =
         Enum.reduce(execution_order, {%{}, stage_states}, fn stage_id, {results, states} ->
           stage = Enum.find(config.stages, fn s -> s.id == stage_id end)
-          
+
           case execute_streaming_stage(stage, data_point, states, results) do
             {:ok, result, new_state} ->
               updated_results = if result, do: Map.put(results, stage_id, result), else: results
               updated_states = if new_state, do: Map.put(states, stage_id, new_state), else: states
               {updated_results, updated_states}
-            
+
             {:error, reason} ->
               case config.error_handling do
                 :fail_fast -> throw({:error, reason})
@@ -395,12 +396,13 @@ defmodule TradingIndicators.Pipeline do
         end)
 
       execution_time = :os.system_time(:microsecond) - start_time
-      
+
       updated_metrics = update_streaming_metrics(pipeline_state.metrics, execution_time)
-      
-      new_pipeline_state = %{pipeline_state |
-        stage_states: updated_states,
-        metrics: updated_metrics
+
+      new_pipeline_state = %{
+        pipeline_state
+        | stage_states: updated_states,
+          metrics: updated_metrics
       }
 
       {:ok, stage_results, new_pipeline_state}
@@ -434,7 +436,7 @@ defmodule TradingIndicators.Pipeline do
   @spec aggregate_results([execution_result()], atom()) :: execution_result()
   def aggregate_results(pipeline_results, :merge) do
     # Merge all stage results chronologically
-    merged_stage_results = 
+    merged_stage_results =
       pipeline_results
       |> Enum.reduce(%{}, fn result, acc ->
         Enum.reduce(result.stage_results, acc, fn {stage_id, stage_results}, stage_acc ->
@@ -459,7 +461,9 @@ defmodule TradingIndicators.Pipeline do
   def aggregate_results(pipeline_results, :latest) do
     # Keep only the latest result for each stage
     latest_result = List.last(pipeline_results)
-    latest_result || %{stage_results: %{}, aggregated_result: [], execution_metrics: %{}, errors: []}
+
+    latest_result ||
+      %{stage_results: %{}, aggregated_result: [], execution_metrics: %{}, errors: []}
   end
 
   # Private helper functions
@@ -473,23 +477,29 @@ defmodule TradingIndicators.Pipeline do
   end
 
   defp validate_stages_exist(%{stages: stages}) when length(stages) == 0 do
-    {:error, %Errors.InvalidParams{message: "Pipeline must have at least one stage", param: :stages}}
+    {:error,
+     %Errors.InvalidParams{message: "Pipeline must have at least one stage", param: :stages}}
   end
-  
+
   defp validate_stages_exist(_builder), do: :ok
 
   defp validate_dependencies(%{stages: stages, dependencies: dependencies}) do
     stage_ids = Enum.map(stages, & &1.id) |> MapSet.new()
-    
+
     Enum.reduce_while(dependencies, :ok, fn {dependent, deps}, _acc ->
       invalid_deps = Enum.reject(deps, &MapSet.member?(stage_ids, &1))
-      
+
       case invalid_deps do
-        [] -> {:cont, :ok}
-        _ -> {:halt, {:error, %Errors.InvalidParams{
-          message: "Unknown dependencies: #{inspect(invalid_deps)} for stage: #{dependent}",
-          param: :dependencies
-        }}}
+        [] ->
+          {:cont, :ok}
+
+        _ ->
+          {:halt,
+           {:error,
+            %Errors.InvalidParams{
+              message: "Unknown dependencies: #{inspect(invalid_deps)} for stage: #{dependent}",
+              param: :dependencies
+            }}}
       end
     end)
   end
@@ -498,24 +508,28 @@ defmodule TradingIndicators.Pipeline do
     # Simplified cycle detection - a full implementation would use DFS
     # For now, we just ensure no stage depends on itself
     case Enum.find(builder.dependencies, fn {stage, deps} -> stage in deps end) do
-      nil -> :ok
-      {stage, _} -> {:error, %Errors.InvalidParams{
-        message: "Circular dependency detected for stage: #{stage}",
-        param: :dependencies
-      }}
+      nil ->
+        :ok
+
+      {stage, _} ->
+        {:error,
+         %Errors.InvalidParams{
+           message: "Circular dependency detected for stage: #{stage}",
+           param: :dependencies
+         }}
     end
   end
 
   defp resolve_execution_order(%{stages: stages, dependencies: dependencies}) do
     # Simplified topological sort
     stage_ids = Enum.map(stages, & &1.id)
-    
+
     # Separate independent and dependent stages
-    {independent, dependent} = 
-      Enum.split_with(stage_ids, fn id -> 
+    {independent, dependent} =
+      Enum.split_with(stage_ids, fn id ->
         not Map.has_key?(dependencies, id) or Map.get(dependencies, id) == []
       end)
-    
+
     # Simple ordering: independent stages first, then dependent stages
     independent ++ dependent
   end
@@ -538,7 +552,8 @@ defmodule TradingIndicators.Pipeline do
   end
 
   defp execute_streaming_stage(stage, data_point, stage_states, _previous_results) do
-    if Map.has_key?(stage_states, stage.id) and function_exported?(stage.indicator, :update_state, 2) do
+    if Map.has_key?(stage_states, stage.id) and
+         function_exported?(stage.indicator, :update_state, 2) do
       current_state = Map.get(stage_states, stage.id)
       stage.indicator.update_state(current_state, data_point)
     else
@@ -555,16 +570,17 @@ defmodule TradingIndicators.Pipeline do
   end
 
   defp build_execution_metrics(stage_results, execution_time, _pipeline_config) do
-    stage_metrics = 
+    stage_metrics =
       stage_results
       |> Enum.map(fn {stage_id, results} ->
-        {stage_id, %{
-          executions: 1,
-          total_time: execution_time,
-          average_time: execution_time / 1.0,
-          error_count: 0,
-          result_count: length(results)
-        }}
+        {stage_id,
+         %{
+           executions: 1,
+           total_time: execution_time,
+           average_time: execution_time / 1.0,
+           error_count: 0,
+           result_count: length(results)
+         }}
       end)
       |> Map.new()
 
@@ -588,21 +604,23 @@ defmodule TradingIndicators.Pipeline do
   end
 
   defp update_streaming_metrics(metrics, execution_time) do
-    %{metrics |
-      total_executions: metrics.total_executions + 1,
-      total_processing_time: metrics.total_processing_time + execution_time,
-      last_execution_time: execution_time
+    %{
+      metrics
+      | total_executions: metrics.total_executions + 1,
+        total_processing_time: metrics.total_processing_time + execution_time,
+        last_execution_time: execution_time
     }
   end
 
   defp aggregate_metrics(pipeline_results) do
     total_executions = length(pipeline_results)
-    total_processing_time = 
+
+    total_processing_time =
       pipeline_results
       |> Enum.map(fn r -> r.execution_metrics.total_processing_time end)
       |> Enum.sum()
-    
-    total_errors = 
+
+    total_errors =
       pipeline_results
       |> Enum.map(fn r -> length(r.errors) end)
       |> Enum.sum()

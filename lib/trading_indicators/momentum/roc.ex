@@ -107,15 +107,14 @@ defmodule TradingIndicators.Momentum.ROC do
       {:ok, result} = ROC.calculate(data, period: 12)
   """
   @impl true
-  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec calculate(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(data, opts \\ []) when is_list(data) do
     with :ok <- validate_params(opts),
          period <- Keyword.get(opts, :period, @default_period),
          source <- Keyword.get(opts, :source, @default_source),
          variant <- Keyword.get(opts, :variant, @default_variant),
          :ok <- Utils.validate_data_length(data, period + 1) do
-      
       prices = extract_prices(data, source)
       calculate_roc_values(prices, period, variant, source, data)
     end
@@ -148,12 +147,13 @@ defmodule TradingIndicators.Momentum.ROC do
   end
 
   def validate_params(_opts) do
-    {:error, %Errors.InvalidParams{
-      message: "Options must be a keyword list",
-      param: :opts,
-      value: "non-keyword-list",
-      expected: "keyword list"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Options must be a keyword list",
+       param: :opts,
+       value: "non-keyword-list",
+       expected: "keyword list"
+     }}
   end
 
   @doc """
@@ -247,19 +247,25 @@ defmodule TradingIndicators.Momentum.ROC do
       {:ok, new_state, result} = ROC.update_state(state, data_point)
   """
   @impl true
-  @spec update_state(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
-  def update_state(%{roc_period: period, source: source, variant: variant, 
-                     historical_prices: prices, count: count} = _state, 
-                   data_point) do
-    
+  @spec update_state(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  def update_state(
+        %{
+          roc_period: period,
+          source: source,
+          variant: variant,
+          historical_prices: prices,
+          count: count
+        } = _state,
+        data_point
+      ) do
     try do
       current_price = extract_single_price(data_point, source)
       new_count = count + 1
-      
+
       # Update price buffer
       new_prices = update_buffer(prices, current_price, period + 1)
-      
+
       new_state = %{
         roc_period: period,
         source: source,
@@ -267,13 +273,13 @@ defmodule TradingIndicators.Momentum.ROC do
         historical_prices: new_prices,
         count: new_count
       }
-      
+
       # Calculate ROC if we have enough data
       if new_count >= period + 1 do
         historical_price = List.first(new_prices)
         roc_value = calculate_roc_value(current_price, historical_price, variant)
         timestamp = get_timestamp(data_point)
-        
+
         result = %{
           value: roc_value,
           timestamp: timestamp,
@@ -285,7 +291,7 @@ defmodule TradingIndicators.Momentum.ROC do
             signal: determine_signal(roc_value)
           }
         }
-        
+
         {:ok, new_state, result}
       else
         {:ok, new_state, nil}
@@ -296,48 +302,57 @@ defmodule TradingIndicators.Momentum.ROC do
   end
 
   def update_state(_state, _data_point) do
-    {:error, %Errors.StreamStateError{
-      message: "Invalid state format for ROC streaming",
-      operation: :update_state,
-      reason: "malformed state"
-    }}
+    {:error,
+     %Errors.StreamStateError{
+       message: "Invalid state format for ROC streaming",
+       operation: :update_state,
+       reason: "malformed state"
+     }}
   end
 
   # Private functions
 
   defp validate_period(period) when is_integer(period) and period >= 1, do: :ok
+
   defp validate_period(period) do
     {:error, Errors.invalid_period(period)}
   end
 
   defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+
   defp validate_source(source) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid source: #{inspect(source)}",
-      param: :source,
-      value: source,
-      expected: "one of [:open, :high, :low, :close]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid source: #{inspect(source)}",
+       param: :source,
+       value: source,
+       expected: "one of [:open, :high, :low, :close]"
+     }}
   end
 
   defp validate_variant(variant) when variant in [:percentage, :price], do: :ok
+
   defp validate_variant(variant) do
-    {:error, %Errors.InvalidParams{
-      message: "Invalid variant: #{inspect(variant)}",
-      param: :variant,
-      value: variant,
-      expected: "one of [:percentage, :price]"
-    }}
+    {:error,
+     %Errors.InvalidParams{
+       message: "Invalid variant: #{inspect(variant)}",
+       param: :variant,
+       value: variant,
+       expected: "one of [:percentage, :price]"
+     }}
   end
 
   defp extract_prices(data, source) when is_list(data) and length(data) > 0 do
     case List.first(data) do
-      %Decimal{} -> data  # Already a price series
-      %{} = _ohlcv -> extract_ohlcv_prices(data, source)  # OHLCV data
-      _ -> data  # Assume it's some other price series format
+      # Already a price series
+      %Decimal{} -> data
+      # OHLCV data
+      %{} = _ohlcv -> extract_ohlcv_prices(data, source)
+      # Assume it's some other price series format
+      _ -> data
     end
   end
-  
+
   defp extract_ohlcv_prices(data, :close), do: Utils.extract_closes(data)
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
@@ -350,7 +365,7 @@ defmodule TradingIndicators.Momentum.ROC do
   defp extract_single_price(price, _source) when is_number(price) do
     Decimal.new(price)
   end
-  
+
   defp extract_single_price(%{} = data_point, source) do
     Map.fetch!(data_point, source)
   end
@@ -359,16 +374,16 @@ defmodule TradingIndicators.Momentum.ROC do
     # Create pairs of current price and price n periods ago
     current_prices = Enum.drop(prices, period)
     historical_prices = Enum.take(prices, length(prices) - period)
-    
-    roc_values = 
+
+    roc_values =
       Enum.zip(current_prices, historical_prices)
       |> Enum.map(fn {current, historical} ->
         calculate_roc_value(current, historical, variant)
       end)
-    
+
     # Build results
     results = build_roc_results(roc_values, period, variant, source, original_data)
-    
+
     {:ok, results}
   end
 
@@ -376,6 +391,7 @@ defmodule TradingIndicators.Momentum.ROC do
     case variant do
       :percentage ->
         calculate_percentage_roc(current_price, historical_price)
+
       :price ->
         calculate_price_roc(current_price, historical_price)
     end
@@ -383,7 +399,10 @@ defmodule TradingIndicators.Momentum.ROC do
 
   defp calculate_percentage_roc(current_price, historical_price) do
     case Decimal.equal?(historical_price, Decimal.new("0")) do
-      true -> Decimal.new("0")  # Avoid division by zero
+      # Avoid division by zero
+      true ->
+        Decimal.new("0")
+
       false ->
         difference = Decimal.sub(current_price, historical_price)
         ratio = Decimal.div(difference, historical_price)
@@ -402,7 +421,7 @@ defmodule TradingIndicators.Momentum.ROC do
     |> Enum.with_index(period)
     |> Enum.map(fn {roc_value, index} ->
       timestamp = get_data_timestamp(original_data, index)
-      
+
       %{
         value: roc_value,
         timestamp: timestamp,
@@ -419,7 +438,7 @@ defmodule TradingIndicators.Momentum.ROC do
 
   defp determine_signal(roc_value) do
     zero = Decimal.new("0")
-    
+
     cond do
       Decimal.gt?(roc_value, zero) -> :bullish
       Decimal.lt?(roc_value, zero) -> :bearish
@@ -443,7 +462,7 @@ defmodule TradingIndicators.Momentum.ROC do
 
   defp update_buffer(buffer, new_value, max_size) do
     updated_buffer = buffer ++ [new_value]
-    
+
     if length(updated_buffer) > max_size do
       Enum.take(updated_buffer, -max_size)
     else

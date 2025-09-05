@@ -44,7 +44,7 @@ defmodule TradingIndicators.Volatility do
   - `:smoothing` - Smoothing method for ATR (`:sma`, `:ema`, `:rma`)
   - `:multiplier` - Standard deviation multiplier for Bollinger Bands
   - `:calculation` - Sample vs population calculation for Standard Deviation
-  
+
   Specific indicators may have additional parameters. See individual indicator
   documentation for complete parameter lists.
 
@@ -105,17 +105,18 @@ defmodule TradingIndicators.Volatility do
       {:ok, results} = TradingIndicators.Volatility.calculate(StandardDeviation, data, period: 20)
   """
   @spec calculate(indicator_module(), Types.data_series() | [Decimal.t()], keyword()) ::
-    {:ok, Types.result_series()} | {:error, term()}
+          {:ok, Types.result_series()} | {:error, term()}
   def calculate(indicator, data, opts \\ []) do
     if indicator in available_indicators() do
       indicator.calculate(data, opts)
     else
-      {:error, %Errors.InvalidParams{
-        message: "Unknown volatility indicator: #{inspect(indicator)}",
-        param: :indicator,
-        value: indicator,
-        expected: "one of #{inspect(available_indicators())}"
-      }}
+      {:error,
+       %Errors.InvalidParams{
+         message: "Unknown volatility indicator: #{inspect(indicator)}",
+         param: :indicator,
+         value: indicator,
+         expected: "one of #{inspect(available_indicators())}"
+       }}
     end
   end
 
@@ -162,33 +163,34 @@ defmodule TradingIndicators.Volatility do
 
       {:ok, new_state, result} = TradingIndicators.Volatility.update_stream(state, data_point)
   """
-  @spec update_stream(map(), Types.ohlcv() | Decimal.t()) :: 
-    {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
+  @spec update_stream(map(), Types.ohlcv() | Decimal.t()) ::
+          {:ok, map(), Types.indicator_result() | nil} | {:error, term()}
   def update_stream(state, data_point) do
     # Try to determine indicator from state metadata or structure
     cond do
       # StandardDeviation state (has prices and calculation type)
       Map.has_key?(state, :calculation) and Map.has_key?(state, :prices) ->
         StandardDeviation.update_state(state, data_point)
-      
+
       # ATR state (has smoothing and true_ranges/atr_value)  
       Map.has_key?(state, :smoothing) and Map.has_key?(state, :atr_value) ->
         ATR.update_state(state, data_point)
-      
+
       # BollingerBands state (has multiplier and prices)
       Map.has_key?(state, :multiplier) and Map.has_key?(state, :prices) ->
         BollingerBands.update_state(state, data_point)
-        
+
       # VolatilityIndex state (has method and data_points)
       Map.has_key?(state, :method) and Map.has_key?(state, :data_points) ->
         VolatilityIndex.update_state(state, data_point)
-      
+
       true ->
-        {:error, %Errors.StreamStateError{
-          message: "Unable to determine volatility indicator type from state",
-          operation: :update_stream,
-          reason: "unknown state format"
-        }}
+        {:error,
+         %Errors.StreamStateError{
+           message: "Unable to determine volatility indicator type from state",
+           operation: :update_stream,
+           reason: "unknown state format"
+         }}
     end
   end
 
@@ -206,8 +208,8 @@ defmodule TradingIndicators.Volatility do
 
       {:ok, results} = TradingIndicators.Volatility.standard_deviation(data, period: 20, calculation: :sample)
   """
-  @spec standard_deviation(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec standard_deviation(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def standard_deviation(data, opts \\ []), do: StandardDeviation.calculate(data, opts)
 
   @doc """
@@ -222,8 +224,8 @@ defmodule TradingIndicators.Volatility do
 
       {:ok, results} = TradingIndicators.Volatility.atr(data, period: 14, smoothing: :rma)
   """
-  @spec atr(Types.data_series(), keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec atr(Types.data_series(), keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def atr(data, opts \\ []), do: ATR.calculate(data, opts)
 
   @doc """
@@ -238,8 +240,8 @@ defmodule TradingIndicators.Volatility do
 
       {:ok, results} = TradingIndicators.Volatility.bollinger_bands(data, period: 20, multiplier: 2.0)
   """
-  @spec bollinger_bands(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, [Types.bollinger_result()]} | {:error, term()}
+  @spec bollinger_bands(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, [Types.bollinger_result()]} | {:error, term()}
   def bollinger_bands(data, opts \\ []), do: BollingerBands.calculate(data, opts)
 
   @doc """
@@ -254,8 +256,8 @@ defmodule TradingIndicators.Volatility do
 
       {:ok, results} = TradingIndicators.Volatility.volatility_index(data, period: 20, method: :historical)
   """
-  @spec volatility_index(Types.data_series() | [Decimal.t()], keyword()) :: 
-    {:ok, Types.result_series()} | {:error, term()}
+  @spec volatility_index(Types.data_series() | [Decimal.t()], keyword()) ::
+          {:ok, Types.result_series()} | {:error, term()}
   def volatility_index(data, opts \\ []), do: VolatilityIndex.calculate(data, opts)
 
   @doc """

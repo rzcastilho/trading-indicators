@@ -7,25 +7,55 @@ defmodule TradingIndicators.Volatility.ATRTest do
   require Decimal
 
   @sample_ohlc_data [
-    %{open: Decimal.new("44.34"), high: Decimal.new("44.90"), low: Decimal.new("44.15"), 
-      close: Decimal.new("44.25"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-    %{open: Decimal.new("44.25"), high: Decimal.new("44.83"), low: Decimal.new("44.05"), 
-      close: Decimal.new("44.30"), volume: 1200, timestamp: ~U[2024-01-01 09:31:00Z]},
-    %{open: Decimal.new("44.30"), high: Decimal.new("44.83"), low: Decimal.new("43.85"), 
-      close: Decimal.new("44.12"), volume: 900, timestamp: ~U[2024-01-01 09:32:00Z]},
-    %{open: Decimal.new("44.12"), high: Decimal.new("44.70"), low: Decimal.new("43.40"), 
-      close: Decimal.new("44.60"), volume: 1100, timestamp: ~U[2024-01-01 09:33:00Z]},
-    %{open: Decimal.new("44.60"), high: Decimal.new("45.00"), low: Decimal.new("44.15"), 
-      close: Decimal.new("44.90"), volume: 1300, timestamp: ~U[2024-01-01 09:34:00Z]}
+    %{
+      open: Decimal.new("44.34"),
+      high: Decimal.new("44.90"),
+      low: Decimal.new("44.15"),
+      close: Decimal.new("44.25"),
+      volume: 1000,
+      timestamp: ~U[2024-01-01 09:30:00Z]
+    },
+    %{
+      open: Decimal.new("44.25"),
+      high: Decimal.new("44.83"),
+      low: Decimal.new("44.05"),
+      close: Decimal.new("44.30"),
+      volume: 1200,
+      timestamp: ~U[2024-01-01 09:31:00Z]
+    },
+    %{
+      open: Decimal.new("44.30"),
+      high: Decimal.new("44.83"),
+      low: Decimal.new("43.85"),
+      close: Decimal.new("44.12"),
+      volume: 900,
+      timestamp: ~U[2024-01-01 09:32:00Z]
+    },
+    %{
+      open: Decimal.new("44.12"),
+      high: Decimal.new("44.70"),
+      low: Decimal.new("43.40"),
+      close: Decimal.new("44.60"),
+      volume: 1100,
+      timestamp: ~U[2024-01-01 09:33:00Z]
+    },
+    %{
+      open: Decimal.new("44.60"),
+      high: Decimal.new("45.00"),
+      low: Decimal.new("44.15"),
+      close: Decimal.new("44.90"),
+      volume: 1300,
+      timestamp: ~U[2024-01-01 09:34:00Z]
+    }
   ]
 
   describe "calculate/2" do
     test "calculates ATR with default parameters (RMA smoothing)" do
       {:ok, results} = ATR.calculate(@sample_ohlc_data, period: 3)
-      
+
       assert length(results) == 3
       [first, second, third] = results
-      
+
       # Check structure
       assert %{value: value1, timestamp: timestamp1, metadata: metadata1} = first
       assert Decimal.is_decimal(value1)
@@ -33,30 +63,30 @@ defmodule TradingIndicators.Volatility.ATRTest do
       assert metadata1.indicator == "ATR"
       assert metadata1.period == 3
       assert metadata1.smoothing == :rma
-      
+
       # Values should be positive
       assert Decimal.positive?(value1)
       assert Decimal.positive?(second.value)
       assert Decimal.positive?(third.value)
-      
+
       # ATR should contain True Range in metadata
       assert Decimal.is_decimal(metadata1.true_range)
     end
 
     test "calculates ATR with SMA smoothing" do
       {:ok, results} = ATR.calculate(@sample_ohlc_data, period: 3, smoothing: :sma)
-      
+
       assert length(results) == 3
       first_result = List.first(results)
       assert first_result.metadata.smoothing == :sma
-      
+
       # For SMA, each ATR value should be the simple average of the last N true ranges
       assert Decimal.positive?(first_result.value)
     end
 
     test "calculates ATR with EMA smoothing" do
       {:ok, results} = ATR.calculate(@sample_ohlc_data, period: 3, smoothing: :ema)
-      
+
       assert length(results) == 3
       first_result = List.first(results)
       assert first_result.metadata.smoothing == :ema
@@ -67,15 +97,15 @@ defmodule TradingIndicators.Volatility.ATRTest do
       {:ok, sma_results} = ATR.calculate(@sample_ohlc_data, period: 3, smoothing: :sma)
       {:ok, ema_results} = ATR.calculate(@sample_ohlc_data, period: 3, smoothing: :ema)
       {:ok, rma_results} = ATR.calculate(@sample_ohlc_data, period: 3, smoothing: :rma)
-      
+
       assert length(sma_results) == length(ema_results)
       assert length(ema_results) == length(rma_results)
-      
+
       # Values should generally be different (especially for later periods)
       last_sma = List.last(sma_results).value
       last_ema = List.last(ema_results).value
       last_rma = List.last(rma_results).value
-      
+
       # At least one should be different from the others
       different_values = [last_sma, last_ema, last_rma] |> Enum.uniq() |> length()
       assert different_values > 1
@@ -84,7 +114,7 @@ defmodule TradingIndicators.Volatility.ATRTest do
     test "returns error for insufficient data" do
       short_data = Enum.take(@sample_ohlc_data, 2)
       {:error, error} = ATR.calculate(short_data, period: 5)
-      
+
       assert %Errors.InsufficientData{} = error
       assert error.required == 5
       assert error.provided == 2
@@ -93,7 +123,7 @@ defmodule TradingIndicators.Volatility.ATRTest do
     test "returns error for invalid period" do
       {:error, error} = ATR.calculate(@sample_ohlc_data, period: 0)
       assert %Errors.InvalidParams{param: :period} = error
-      
+
       {:error, error} = ATR.calculate(@sample_ohlc_data, period: -1)
       assert %Errors.InvalidParams{param: :period} = error
     end
@@ -120,7 +150,7 @@ defmodule TradingIndicators.Volatility.ATRTest do
     test "rejects invalid parameters" do
       {:error, error} = ATR.validate_params(period: 0)
       assert %Errors.InvalidParams{param: :period} = error
-      
+
       {:error, error} = ATR.validate_params(smoothing: :invalid)
       assert %Errors.InvalidParams{param: :smoothing} = error
     end
@@ -145,37 +175,37 @@ defmodule TradingIndicators.Volatility.ATRTest do
   describe "streaming support" do
     test "init_state/1 creates initial state" do
       state = ATR.init_state(period: 5, smoothing: :rma)
-      
+
       assert %{
-        period: 5, 
-        smoothing: :rma, 
-        true_ranges: [], 
-        atr_value: nil,
-        previous_close: nil,
-        count: 0
-      } = state
+               period: 5,
+               smoothing: :rma,
+               true_ranges: [],
+               atr_value: nil,
+               previous_close: nil,
+               count: 0
+             } = state
     end
 
     test "update_state/2 processes data points correctly" do
       state = ATR.init_state(period: 3, smoothing: :sma)
-      
+
       # Add first data point - should not return result yet (need period data points)
       data_point1 = List.first(@sample_ohlc_data)
       {:ok, new_state1, nil} = ATR.update_state(state, data_point1)
       assert new_state1.count == 1
       assert length(new_state1.true_ranges) == 1
       assert new_state1.previous_close == data_point1.close
-      
+
       # Add second data point - still not enough
       data_point2 = Enum.at(@sample_ohlc_data, 1)
       {:ok, new_state2, nil} = ATR.update_state(new_state1, data_point2)
       assert new_state2.count == 2
       assert length(new_state2.true_ranges) == 2
-      
+
       # Add third data point - should return first result
       data_point3 = Enum.at(@sample_ohlc_data, 2)
       {:ok, new_state3, result} = ATR.update_state(new_state2, data_point3)
-      
+
       assert new_state3.count == 3
       assert %{value: value, timestamp: timestamp, metadata: metadata} = result
       assert Decimal.is_decimal(value)
@@ -186,29 +216,30 @@ defmodule TradingIndicators.Volatility.ATRTest do
 
     test "update_state/2 maintains rolling window for SMA" do
       state = ATR.init_state(period: 2, smoothing: :sma)
-      
+
       # Fill initial window
       {:ok, state, _} = ATR.update_state(state, List.first(@sample_ohlc_data))
       {:ok, state, result1} = ATR.update_state(state, Enum.at(@sample_ohlc_data, 1))
-      
+
       assert length(state.true_ranges) == 2
       assert result1 != nil
-      
+
       # Add another point - should maintain window size of 2 for SMA
       {:ok, state, result2} = ATR.update_state(state, Enum.at(@sample_ohlc_data, 2))
-      
+
       assert length(state.true_ranges) == 2
       assert result2 != nil
-      refute Decimal.eq?(result1.value, result2.value)  # Values should be different
+      # Values should be different
+      refute Decimal.eq?(result1.value, result2.value)
     end
 
     test "update_state/2 handles EMA smoothing" do
       state = ATR.init_state(period: 2, smoothing: :ema)
-      
+
       {:ok, state, _} = ATR.update_state(state, List.first(@sample_ohlc_data))
       {:ok, state, result1} = ATR.update_state(state, Enum.at(@sample_ohlc_data, 1))
       {:ok, _state, result2} = ATR.update_state(state, Enum.at(@sample_ohlc_data, 2))
-      
+
       assert result1 != nil
       assert result2 != nil
       assert result1.metadata.smoothing == :ema
@@ -217,11 +248,11 @@ defmodule TradingIndicators.Volatility.ATRTest do
 
     test "update_state/2 handles RMA smoothing (Wilder's method)" do
       state = ATR.init_state(period: 2, smoothing: :rma)
-      
+
       {:ok, state, _} = ATR.update_state(state, List.first(@sample_ohlc_data))
       {:ok, state, result1} = ATR.update_state(state, Enum.at(@sample_ohlc_data, 1))
       {:ok, _state, result2} = ATR.update_state(state, Enum.at(@sample_ohlc_data, 2))
-      
+
       assert result1 != nil
       assert result2 != nil
       assert result1.metadata.smoothing == :rma
@@ -235,8 +266,9 @@ defmodule TradingIndicators.Volatility.ATRTest do
 
     test "update_state/2 handles invalid data point" do
       state = ATR.init_state(period: 3)
-      invalid_data = %{close: Decimal.new("100")}  # Missing high/low
-      
+      # Missing high/low
+      invalid_data = %{close: Decimal.new("100")}
+
       {:error, error} = ATR.update_state(state, invalid_data)
       assert %Errors.StreamStateError{} = error
     end
@@ -247,10 +279,10 @@ defmodule TradingIndicators.Volatility.ATRTest do
       # First data point - True Range = High - Low
       data1 = List.first(@sample_ohlc_data)
       expected_tr1 = Decimal.sub(data1.high, data1.low)
-      
+
       {:ok, results} = ATR.calculate([data1], period: 1)
       result1 = List.first(results)
-      
+
       assert Decimal.eq?(result1.metadata.true_range, expected_tr1)
     end
 
@@ -258,7 +290,7 @@ defmodule TradingIndicators.Volatility.ATRTest do
       # Use first three data points to test previous close logic
       data = Enum.take(@sample_ohlc_data, 3)
       {:ok, results} = ATR.calculate(data, period: 2)
-      
+
       # Second result should consider previous close in True Range calculation
       second_result = Enum.at(results, 1)
       assert Decimal.positive?(second_result.metadata.true_range)
@@ -269,14 +301,26 @@ defmodule TradingIndicators.Volatility.ATRTest do
   describe "edge cases" do
     test "handles identical OHLC values" do
       identical_data = [
-        %{open: Decimal.new("100.0"), high: Decimal.new("100.0"), low: Decimal.new("100.0"), 
-          close: Decimal.new("100.0"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{open: Decimal.new("100.0"), high: Decimal.new("100.0"), low: Decimal.new("100.0"), 
-          close: Decimal.new("100.0"), volume: 1000, timestamp: ~U[2024-01-01 09:31:00Z]}
+        %{
+          open: Decimal.new("100.0"),
+          high: Decimal.new("100.0"),
+          low: Decimal.new("100.0"),
+          close: Decimal.new("100.0"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          open: Decimal.new("100.0"),
+          high: Decimal.new("100.0"),
+          low: Decimal.new("100.0"),
+          close: Decimal.new("100.0"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        }
       ]
-      
+
       {:ok, results} = ATR.calculate(identical_data, period: 2)
-      
+
       assert length(results) == 1
       result = List.first(results)
       # ATR should be 0 when there's no price movement
@@ -286,40 +330,45 @@ defmodule TradingIndicators.Volatility.ATRTest do
     test "handles minimum period of 1" do
       data = [List.first(@sample_ohlc_data)]
       {:ok, results} = ATR.calculate(data, period: 1)
-      
+
       assert length(results) == 1
       assert Decimal.positive?(List.first(results).value)
     end
 
     test "precision is maintained" do
       {:ok, results} = ATR.calculate(@sample_ohlc_data, period: 3)
-      
+
       # Check that results have expected precision (6 decimal places)
       result_value = List.first(results).value
-      decimal_places = result_value |> Decimal.to_string() |> String.split(".") |> List.last() |> String.length()
+
+      decimal_places =
+        result_value |> Decimal.to_string() |> String.split(".") |> List.last() |> String.length()
+
       assert decimal_places <= 6
     end
 
     test "handles large datasets efficiently" do
-      large_data = for _i <- 1..500 do
-        base_price = 100.0
-        high = base_price + :rand.uniform(5)
-        low = base_price - :rand.uniform(5)
-        close = base_price + (:rand.uniform(10) - 5)
-        
-        %{
-          open: Decimal.from_float(base_price),
-          high: Decimal.from_float(high),
-          low: Decimal.from_float(low),
-          close: Decimal.from_float(close),
-          volume: 1000,
-          timestamp: DateTime.utc_now()
-        }
-      end
-      
+      large_data =
+        for _i <- 1..500 do
+          base_price = 100.0
+          high = base_price + :rand.uniform(5)
+          low = base_price - :rand.uniform(5)
+          close = base_price + (:rand.uniform(10) - 5)
+
+          %{
+            open: Decimal.from_float(base_price),
+            high: Decimal.from_float(high),
+            low: Decimal.from_float(low),
+            close: Decimal.from_float(close),
+            volume: 1000,
+            timestamp: DateTime.utc_now()
+          }
+        end
+
       {:ok, results} = ATR.calculate(large_data, period: 14)
-      
-      assert length(results) == 487  # 500 - 14 + 1
+
+      # 500 - 14 + 1
+      assert length(results) == 487
       assert Enum.all?(results, &Decimal.positive?(&1.value))
     end
   end
@@ -328,16 +377,34 @@ defmodule TradingIndicators.Volatility.ATRTest do
     test "SMA ATR equals simple average of true ranges" do
       # Test with known data where we can verify manually
       simple_data = [
-        %{open: Decimal.new("100"), high: Decimal.new("105"), low: Decimal.new("95"), 
-          close: Decimal.new("102"), volume: 1000, timestamp: ~U[2024-01-01 09:30:00Z]},
-        %{open: Decimal.new("102"), high: Decimal.new("108"), low: Decimal.new("100"), 
-          close: Decimal.new("106"), volume: 1000, timestamp: ~U[2024-01-01 09:31:00Z]},
-        %{open: Decimal.new("106"), high: Decimal.new("110"), low: Decimal.new("103"), 
-          close: Decimal.new("107"), volume: 1000, timestamp: ~U[2024-01-01 09:32:00Z]}
+        %{
+          open: Decimal.new("100"),
+          high: Decimal.new("105"),
+          low: Decimal.new("95"),
+          close: Decimal.new("102"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:30:00Z]
+        },
+        %{
+          open: Decimal.new("102"),
+          high: Decimal.new("108"),
+          low: Decimal.new("100"),
+          close: Decimal.new("106"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:31:00Z]
+        },
+        %{
+          open: Decimal.new("106"),
+          high: Decimal.new("110"),
+          low: Decimal.new("103"),
+          close: Decimal.new("107"),
+          volume: 1000,
+          timestamp: ~U[2024-01-01 09:32:00Z]
+        }
       ]
-      
+
       {:ok, results} = ATR.calculate(simple_data, period: 2, smoothing: :sma)
-      
+
       # For SMA with period 2, the second result should be average of TRs from windows 2-3
       # First TR = 105 - 95 = 10
       # Second TR = max(108-100, |108-102|, |100-102|) = max(8, 6, 2) = 8  
@@ -345,29 +412,30 @@ defmodule TradingIndicators.Volatility.ATRTest do
       # Second ATR (window 2-3) = (8 + 7) / 2 = 7.5
       second_result = Enum.at(results, 1)
       expected_atr = Decimal.new("7.5")
-      
+
       assert Decimal.eq?(Decimal.round(second_result.value, 1), expected_atr)
     end
 
     test "true range calculation accuracy" do
       # Test specific true range scenarios
       prev_close = Decimal.new("50.0")
-      
+
       data_point = %{
         open: Decimal.new("52.0"),
         high: Decimal.new("55.0"),
-        low: Decimal.new("48.0"),  # Gap down from previous close
+        # Gap down from previous close
+        low: Decimal.new("48.0"),
         close: Decimal.new("54.0"),
         volume: 1000,
         timestamp: ~U[2024-01-01 09:30:00Z]
       }
-      
+
       # True Range = max(55-48, |55-50|, |48-50|) = max(7, 5, 2) = 7
       state = ATR.init_state(period: 1)
       state = %{state | previous_close: prev_close, count: 1}
-      
+
       {:ok, _new_state, result} = ATR.update_state(state, data_point)
-      
+
       expected_tr = Decimal.new("7.0")
       assert Decimal.eq?(result.metadata.true_range, expected_tr)
     end
