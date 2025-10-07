@@ -29,6 +29,11 @@ def deps do
 end
 ```
 
+Then run:
+```bash
+mix deps.get
+```
+
 ### Basic Usage
 
 ```elixir
@@ -113,7 +118,54 @@ end
 - **A/D Line** - Accumulation/Distribution Line
 - **CMF** - Chaikin Money Flow
 
-### 🎯 Advanced Features
+## 🎯 Advanced Features
+
+Beyond basic indicator calculations, the library includes powerful advanced features:
+
+### Pipeline Composition
+Build complex multi-indicator workflows with automatic dependency resolution and parallel execution:
+
+```elixir
+pipeline =
+  TradingIndicators.Pipeline.new()
+  |> TradingIndicators.Pipeline.add_stage("sma", TradingIndicators.Trend.SMA, [period: 20])
+  |> TradingIndicators.Pipeline.add_stage("rsi", TradingIndicators.Momentum.RSI, [period: 14])
+  |> TradingIndicators.Pipeline.build()
+
+{:ok, results} = TradingIndicators.Pipeline.execute(pipeline, data)
+```
+
+### Enhanced Streaming
+Advanced streaming capabilities including batch processing (>1000 updates/second), stream composition, and state persistence:
+
+```elixir
+config = %{indicator: TradingIndicators.Trend.SMA, params: [period: 14], buffer_size: 1000}
+{:ok, state} = TradingIndicators.Streaming.init_stream(config)
+{:ok, results, new_state} = TradingIndicators.Streaming.process_batch(state, data_batch)
+```
+
+### Performance Optimization
+Built-in benchmarking, memory profiling, intelligent caching with multiple eviction policies:
+
+```elixir
+{:ok, benchmark} = TradingIndicators.Performance.benchmark_indicator(
+  TradingIndicators.Trend.SMA,
+  [dataset1, dataset2],
+  iterations: 100
+)
+
+# Enable caching for repeated calculations
+TradingIndicators.Performance.enable_caching(:lru, max_size: 1000)
+```
+
+### Data Quality Management
+Comprehensive validation, outlier detection, gap filling, and quality scoring:
+
+```elixir
+{:ok, report} = TradingIndicators.DataQuality.validate_time_series(data)
+{:ok, cleaned_data} = TradingIndicators.DataQuality.fill_gaps(data, :forward_fill)
+{:ok, outliers} = TradingIndicators.DataQuality.detect_outliers(data, method: :iqr)
+```
 
 ## 💾 Data Formats
 
@@ -136,12 +188,14 @@ The library accepts OHLCV data in map format with Decimal values:
 
 ## 🔧 Configuration Options
 
+All indicators share common parameters while also supporting indicator-specific options:
+
 ### Common Parameters
-- `:period` - Lookback period (default varies by indicator)
-- `:source` - Price source (`:open`, `:high`, `:low`, `:close`)
+- `:period` - Lookback period (default varies by indicator, typically 14-20)
+- `:source` - Price source to use for calculation: `:open`, `:high`, `:low`, or `:close` (default: `:close`)
 - `:smoothing` - Additional smoothing periods where applicable
 
-### Indicator-Specific Options
+### Indicator-Specific Examples
 
 ```elixir
 # Bollinger Bands
@@ -193,7 +247,7 @@ All indicators return results in a consistent format:
 
 ## 🔄 Streaming API
 
-All indicators support real-time streaming for incremental data processing:
+All indicators support real-time streaming for incremental data processing, ideal for live trading systems and real-time analysis:
 
 ### Initialize Stream
 ```elixir
@@ -228,18 +282,23 @@ fresh_state = Trend.reset_stream(state)
 
 ## 🧮 Mathematical Precision
 
-The library uses the [Decimal](https://hex.pm/packages/decimal) library for all calculations to ensure financial precision:
+The library uses the [Decimal](https://hex.pm/packages/decimal) library for all calculations to ensure financial-grade precision and eliminate floating-point errors:
 
 ```elixir
-# Automatic conversion from strings/integers
+# Create Decimal values from strings or integers
 data = [%{close: Decimal.new("100.123456"), timestamp: DateTime.utc_now()}]
 
-# Maintains precision throughout calculations
+# Precision is maintained throughout all calculations
 {:ok, [result]} = Trend.sma(data, period: 1)
 result.value  # #Decimal<100.123456>
 
 # Convert to float only when needed for display
 Decimal.to_float(result.value)  # 100.123456
+
+# Decimal comparisons for accurate logic
+Decimal.gt?(price, threshold)   # Greater than
+Decimal.lt?(price, threshold)   # Less than
+Decimal.eq?(price, target)      # Equal to
 ```
 
 ## 🛡️ Error Handling
@@ -272,62 +331,96 @@ Comprehensive error handling with specific error types:
 
 ## 🧪 Testing & Quality
 
-- **709 tests** (92 doctests + 617 unit tests)
-- **100% success rate** - All tests passing
-- **Comprehensive coverage** - Edge cases, mathematical accuracy, streaming scenarios
-- **Property-based testing** - Using StreamData for robust validation
-- **Zero compilation warnings** - Clean, professional code
+The library maintains high quality standards with comprehensive testing:
+
+- **709 tests total** - 92 doctests + 617 unit/integration/property tests
+- **100% passing rate** - All tests consistently pass
+- **Comprehensive coverage** - Edge cases, mathematical accuracy, streaming scenarios, error conditions
+- **Property-based testing** - Using StreamData for robust validation of mathematical properties
+- **Zero compilation warnings** - Clean, maintainable codebase
+- **Multiple test types** - Unit, integration, property-based, and performance tests
 
 Run tests:
 ```bash
+# Run all tests (unit tests only by default)
 mix test
-mix test --cover  # With coverage report
+
+# Run with coverage report
+mix test --cover
+
+# Run specific test types
+mix test --include integration    # Integration tests
+mix test --include property       # Property-based tests
+mix test --include performance    # Performance benchmarks
+
+# Run specific test file
+mix test test/trading_indicators/trend_test.exs
+
+# Run with seed for reproducibility
+mix test --seed 0
 ```
 
 ## 📚 Documentation
 
-Generate documentation:
+Comprehensive documentation is available for all indicators and features:
+
 ```bash
+# Generate HTML documentation locally
 mix docs
+
+# Open documentation in browser
 open doc/index.html
 ```
 
-Each indicator includes:
-- Mathematical formulas and explanations
-- Usage examples with sample data
-- Parameter descriptions and defaults  
-- Trading interpretation guidelines
-- Streaming usage patterns
+Each indicator module includes:
+- **Mathematical formulas** - Detailed explanation of calculation methodology
+- **Usage examples** - Complete working examples with sample data
+- **Parameter descriptions** - All options with defaults and valid ranges
+- **Trading interpretation** - How to interpret indicator values and signals
+- **Streaming patterns** - Real-time usage examples
+
+Online documentation: [hexdocs.pm/trading_indicators](https://hexdocs.pm/trading_indicators/)
 
 ## 🏗️ Architecture
 
-The library follows a consistent architecture pattern:
+The library follows a consistent, well-structured architecture:
 
 ### Behavior Contract
-All indicators implement `TradingIndicators.Behaviour`:
+All indicators implement `TradingIndicators.Behaviour` for consistency:
 ```elixir
-@callback calculate(data :: list(), opts :: keyword()) :: 
+@callback calculate(data :: list(), opts :: keyword()) ::
   {:ok, list()} | {:error, term()}
-@callback validate_params(opts :: keyword()) :: 
+@callback validate_params(opts :: keyword()) ::
   :ok | {:error, Exception.t()}
 @callback required_periods() :: pos_integer()
 
 # Optional streaming callbacks
-@callback init_state(opts :: keyword()) :: map()  
+@callback init_state(opts :: keyword()) :: map()
 @callback update_state(state :: map(), data_point :: term()) ::
   {:ok, map(), result() | nil} | {:error, term()}
 ```
 
 ### Category Modules
-- `TradingIndicators.Trend` - Trend following indicators
-- `TradingIndicators.Momentum` - Momentum oscillators  
-- `TradingIndicators.Volatility` - Volatility measures
-- `TradingIndicators.Volume` - Volume-based indicators
+Indicators are organized by analysis type:
+- **`TradingIndicators.Trend`** - Trend following indicators (SMA, EMA, MACD, etc.)
+- **`TradingIndicators.Momentum`** - Momentum oscillators (RSI, Stochastic, CCI, etc.)
+- **`TradingIndicators.Volatility`** - Volatility measures (Bollinger Bands, ATR, etc.)
+- **`TradingIndicators.Volume`** - Volume-based indicators (OBV, VWAP, A/D Line, etc.)
+
+Each category module provides a unified interface and convenience functions.
+
+### Utility Modules
+- **`TradingIndicators.Pipeline`** - Multi-indicator workflow composition
+- **`TradingIndicators.Streaming`** - Enhanced real-time streaming capabilities
+- **`TradingIndicators.Performance`** - Benchmarking and optimization tools
+- **`TradingIndicators.DataQuality`** - Data validation and cleaning utilities
+- **`TradingIndicators.Utils`** - Common helper functions
+- **`TradingIndicators.Errors`** - Structured error types
 
 ### Type Safety
-Complete type specifications using `@spec` annotations:
+Complete type specifications using `@spec` annotations throughout:
 ```elixir
-@spec calculate(Types.data_series(), keyword()) :: 
+@spec calculate(Types.data_series(), keyword()) ::
   {:ok, Types.result_series()} | {:error, term()}
 ```
 
@@ -416,25 +509,43 @@ end
 
 ## 🤝 Contributing
 
+Contributions are welcome! Please follow these guidelines:
+
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-indicator`)
-3. Run tests (`mix test`) 
-4. Add tests for new indicators
-5. Ensure code coverage remains high
-6. Update documentation
-7. Commit your changes (`git commit -am 'Add amazing indicator'`)
-8. Push to the branch (`git push origin feature/amazing-indicator`)
-9. Create a Pull Request
+3. Write comprehensive tests (`mix test`)
+4. Ensure all tests pass and maintain high coverage
+5. Follow the code style (`mix format`, `mix credo`)
+6. Add or update documentation with examples
+7. Run type checking (`mix dialyzer`)
+8. Commit your changes with clear messages
+9. Push to the branch (`git push origin feature/amazing-indicator`)
+10. Create a Pull Request with detailed description
+
+See [CLAUDE.md](CLAUDE.md) for detailed development guidelines.
 
 ## 📋 Roadmap
 
-- [ ] **Phase 6**: Advanced Features & Optimization
-- [ ] **Phase 7**: Testing, Documentation & Quality  
+### Completed ✅
+- [x] **Phase 1-5**: Core indicators implementation (22 indicators across 4 categories)
+- [x] **Phase 6**: Advanced Features & Optimization
+  - Pipeline composition system
+  - Enhanced streaming with batch processing
+  - Performance optimization tools
+  - Data quality management
+
+### In Progress 🚧
+- [ ] **Phase 7**: Testing, Documentation & Quality
+  - Comprehensive test coverage expansion
+  - Performance benchmarking suite
+  - Enhanced documentation and guides
+
+### Planned 📅
 - [ ] **Phase 8**: Release Preparation & Hex Publishing
-- [ ] Additional indicators (Ichimoku, Fibonacci, etc.)
-- [ ] Performance benchmarking suite
-- [ ] WebSocket streaming adapters
-- [ ] Chart visualization helpers
+- [ ] Additional indicators (Ichimoku, Fibonacci, Parabolic SAR, etc.)
+- [ ] WebSocket streaming adapters for real-time data feeds
+- [ ] Chart visualization helpers and LiveView components
+- [ ] Integration examples with popular exchanges
 
 ## 📜 License
 
