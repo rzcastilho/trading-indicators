@@ -21,3 +21,6 @@ trading_indicators-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Claude folder
+.claude/
