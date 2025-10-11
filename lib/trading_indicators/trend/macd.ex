@@ -69,7 +69,6 @@ defmodule TradingIndicators.Trend.MACD do
   @default_fast_period 12
   @default_slow_period 26
   @default_signal_period 9
-  @precision 6
 
   @doc """
   Calculates MACD for the given data series.
@@ -424,7 +423,7 @@ defmodule TradingIndicators.Trend.MACD do
 
   defp calculate_macd_lines(aligned_emas) do
     Enum.map(aligned_emas, fn {fast_value, slow_value, timestamp} ->
-      macd_value = Decimal.sub(fast_value, slow_value) |> Decimal.round(@precision)
+      macd_value = Decimal.sub(fast_value, slow_value)
       %{value: macd_value, timestamp: timestamp}
     end)
   end
@@ -462,7 +461,7 @@ defmodule TradingIndicators.Trend.MACD do
 
         histogram_value =
           if signal_value do
-            Decimal.sub(macd_value, signal_value) |> Decimal.round(@precision)
+            Decimal.sub(macd_value, signal_value)
           else
             nil
           end
@@ -494,13 +493,13 @@ defmodule TradingIndicators.Trend.MACD do
 
     histogram_value =
       if signal_value do
-        Decimal.sub(macd_line, signal_value) |> Decimal.round(@precision)
+        Decimal.sub(macd_line, signal_value)
       else
         nil
       end
 
     %{
-      macd: Decimal.round(macd_line, @precision),
+      macd: macd_line,
       signal: signal_value,
       histogram: histogram_value
     }

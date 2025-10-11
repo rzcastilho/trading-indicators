@@ -76,7 +76,6 @@ defmodule TradingIndicators.Momentum.ROC do
   @default_period 12
   @default_source :close
   @default_variant :percentage
-  @precision 2
 
   @doc """
   Calculates Rate of Change for the given data series.
@@ -406,14 +405,12 @@ defmodule TradingIndicators.Momentum.ROC do
       false ->
         difference = Decimal.sub(current_price, historical_price)
         ratio = Decimal.div(difference, historical_price)
-        percentage = Decimal.mult(ratio, Decimal.new("100"))
-        Decimal.round(percentage, @precision)
+        Decimal.mult(ratio, Decimal.new("100"))
     end
   end
 
   defp calculate_price_roc(current_price, historical_price) do
-    difference = Decimal.sub(current_price, historical_price)
-    Decimal.round(difference, @precision)
+    Decimal.sub(current_price, historical_price)
   end
 
   defp build_roc_results(roc_values, period, variant, source, original_data) do

@@ -70,7 +70,6 @@ defmodule TradingIndicators.Momentum.WilliamsR do
   @default_period 14
   @default_overbought -20
   @default_oversold -80
-  @precision 2
 
   @doc """
   Calculates Williams %R for the given data series.
@@ -391,8 +390,7 @@ defmodule TradingIndicators.Momentum.WilliamsR do
 
       false ->
         ratio = Decimal.div(numerator, denominator)
-        williams_r = Decimal.mult(ratio, Decimal.new("-100"))
-        Decimal.round(williams_r, @precision)
+        Decimal.mult(ratio, Decimal.new("-100"))
     end
   end
 

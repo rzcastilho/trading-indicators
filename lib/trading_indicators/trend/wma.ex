@@ -48,7 +48,6 @@ defmodule TradingIndicators.Trend.WMA do
   require Decimal
 
   @default_period 20
-  @precision 6
 
   @doc """
   Calculates Weighted Moving Average for the given data series.
@@ -243,7 +242,7 @@ defmodule TradingIndicators.Trend.WMA do
         timestamp = get_timestamp(data_point)
 
         result = %{
-          value: Decimal.round(wma_value, @precision),
+          value: wma_value,
           timestamp: timestamp,
           metadata: %{
             indicator: "WMA",
@@ -334,7 +333,7 @@ defmodule TradingIndicators.Trend.WMA do
         timestamp = get_data_timestamp(original_data, index)
 
         %{
-          value: Decimal.round(wma_value, @precision),
+          value: wma_value,
           timestamp: timestamp,
           metadata: %{
             indicator: "WMA",

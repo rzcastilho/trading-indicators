@@ -325,9 +325,7 @@ defmodule TradingIndicators.Trend.SMATest do
       ]
 
       assert {:ok, results} = SMA.calculate(data, period: 2)
-      # Note: Result is rounded to 2 decimal places by default, so very small numbers become 0.00
-      # Average rounded to 2 decimal places
-      expected = Decimal.new("0.00")
+      expected = Decimal.new("0.000000015")
       assert Decimal.equal?(Enum.at(results, 0).value, expected)
     end
 

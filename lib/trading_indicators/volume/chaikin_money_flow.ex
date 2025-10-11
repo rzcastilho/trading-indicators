@@ -60,7 +60,6 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
   require Decimal
 
   @default_period 20
-  @precision 6
 
   @doc """
   Calculates Chaikin Money Flow for the given data series.
@@ -253,14 +252,14 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
             end
 
           result = %{
-            value: Decimal.round(cmf_value, @precision),
+            value: cmf_value,
             timestamp: get_timestamp(data_point),
             metadata: %{
               indicator: "ChaikinMoneyFlow",
               period: period,
-              money_flow_volume_sum: Decimal.round(mf_sum, @precision),
-              volume_sum: Decimal.round(volume_sum, 0),
-              current_money_flow_volume: Decimal.round(mf_volume, @precision),
+              money_flow_volume_sum: mf_sum,
+              volume_sum: volume_sum,
+              current_money_flow_volume: mf_volume,
               volume: volume,
               close: close,
               high: high,
@@ -431,14 +430,14 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
         {current_data_point, current_mf_volume, _current_volume} = List.last(window)
 
         %{
-          value: Decimal.round(cmf_value, @precision),
+          value: cmf_value,
           timestamp: get_timestamp(current_data_point),
           metadata: %{
             indicator: "ChaikinMoneyFlow",
             period: period,
-            money_flow_volume_sum: Decimal.round(mf_sum, @precision),
-            volume_sum: Decimal.round(volume_sum, 0),
-            current_money_flow_volume: Decimal.round(current_mf_volume, @precision),
+            money_flow_volume_sum: mf_sum,
+            volume_sum: volume_sum,
+            current_money_flow_volume: current_mf_volume,
             volume: current_data_point.volume,
             close: current_data_point.close,
             high: current_data_point.high,

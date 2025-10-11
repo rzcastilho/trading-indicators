@@ -54,7 +54,6 @@ defmodule TradingIndicators.Volatility.BollingerBands do
 
   @default_period 20
   @default_multiplier Decimal.new("2.0")
-  @precision 6
 
   @doc """
   Calculates Bollinger Bands for the given data series.
@@ -435,11 +434,11 @@ defmodule TradingIndicators.Volatility.BollingerBands do
       end
 
     %{
-      upper_band: Decimal.round(upper_band, @precision),
-      middle_band: Decimal.round(middle_band, @precision),
-      lower_band: Decimal.round(lower_band, @precision),
-      percent_b: Decimal.round(percent_b, @precision),
-      bandwidth: Decimal.round(bandwidth, @precision)
+      upper_band: upper_band,
+      middle_band: middle_band,
+      lower_band: lower_band,
+      percent_b: percent_b,
+      bandwidth: bandwidth
     }
   end
 

@@ -55,7 +55,6 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
 
   @default_period 20
   @default_calculation :sample
-  @precision 6
 
   @doc """
   Calculates Standard Deviation for the given data series.
@@ -246,8 +245,7 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
       }
 
       if new_count >= period do
-        stddev_value =
-          calculate_standard_deviation(new_prices, calculation) |> Decimal.round(@precision)
+        stddev_value = calculate_standard_deviation(new_prices, calculation)
 
         timestamp = get_timestamp(data_point)
 
@@ -357,8 +355,7 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
       |> Utils.sliding_window(period)
       |> Enum.with_index(period - 1)
       |> Enum.map(fn {window, index} ->
-        stddev_value =
-          calculate_standard_deviation(window, calculation) |> Decimal.round(@precision)
+        stddev_value = calculate_standard_deviation(window, calculation)
 
         timestamp = get_data_timestamp(original_data, index)
 

@@ -53,7 +53,6 @@ defmodule TradingIndicators.Trend.KAMA do
   @default_period 10
   @default_fast_period 2
   @default_slow_period 30
-  @precision 6
 
   @impl true
   def calculate(data, opts \\ []) when is_list(data) do
@@ -164,7 +163,7 @@ defmodule TradingIndicators.Trend.KAMA do
         timestamp = get_timestamp(data_point)
 
         result = %{
-          value: Decimal.round(new_kama, @precision),
+          value: new_kama,
           timestamp: timestamp,
           metadata: %{
             indicator: "KAMA",
@@ -258,7 +257,7 @@ defmodule TradingIndicators.Trend.KAMA do
         timestamp = get_data_timestamp(original_data, index)
 
         result = %{
-          value: Decimal.round(kama, @precision),
+          value: kama,
           timestamp: timestamp,
           metadata: %{
             indicator: "KAMA",
