@@ -75,7 +75,6 @@ defmodule TradingIndicators.Momentum.Stochastic do
   @default_k_smoothing 1
   @default_overbought 80
   @default_oversold 20
-  @precision 2
 
   @doc """
   Calculates Stochastic Oscillator for the given data series.
@@ -315,8 +314,8 @@ defmodule TradingIndicators.Momentum.Stochastic do
 
             result = %{
               value: %{
-                k: Decimal.round(smoothed_k, @precision),
-                d: Decimal.round(d_value, @precision)
+                k: smoothed_k,
+                d: d_value
               },
               timestamp: timestamp,
               metadata: %{
@@ -519,8 +518,8 @@ defmodule TradingIndicators.Momentum.Stochastic do
 
       %{
         value: %{
-          k: Decimal.round(k_value, @precision),
-          d: Decimal.round(d_value, @precision)
+          k: k_value,
+          d: d_value
         },
         timestamp: timestamp,
         metadata: %{

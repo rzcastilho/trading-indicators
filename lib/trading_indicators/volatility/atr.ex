@@ -52,7 +52,6 @@ defmodule TradingIndicators.Volatility.ATR do
 
   @default_period 14
   @default_smoothing :rma
-  @precision 6
 
   @doc """
   Calculates Average True Range for the given data series.
@@ -259,13 +258,13 @@ defmodule TradingIndicators.Volatility.ATR do
 
       if new_count >= period and new_atr_value do
         result = %{
-          value: Decimal.round(new_atr_value, @precision),
+          value: new_atr_value,
           timestamp: get_timestamp(data_point),
           metadata: %{
             indicator: "ATR",
             period: period,
             smoothing: smoothing,
-            true_range: Decimal.round(true_range, @precision)
+            true_range: true_range
           }
         }
 
@@ -358,7 +357,7 @@ defmodule TradingIndicators.Volatility.ATR do
       |> Utils.sliding_window(period)
       |> Enum.with_index(period - 1)
       |> Enum.map(fn {window, index} ->
-        atr_value = Utils.mean(window) |> Decimal.round(@precision)
+        atr_value = Utils.mean(window)
         timestamp = get_data_timestamp(original_data, index)
 
         %{
@@ -368,7 +367,7 @@ defmodule TradingIndicators.Volatility.ATR do
             indicator: "ATR",
             period: period,
             smoothing: :sma,
-            true_range: Decimal.round(List.last(window), @precision)
+            true_range: List.last(window)
           }
         }
       end)
@@ -397,13 +396,13 @@ defmodule TradingIndicators.Volatility.ATR do
 
         if index >= period - 1 do
           result = %{
-            value: Decimal.round(current_ema, @precision),
+            value: current_ema,
             timestamp: get_data_timestamp(original_data, index),
             metadata: %{
               indicator: "ATR",
               period: period,
               smoothing: :ema,
-              true_range: Decimal.round(tr, @precision)
+              true_range: tr
             }
           }
 
@@ -436,13 +435,13 @@ defmodule TradingIndicators.Volatility.ATR do
 
         if index >= period - 1 do
           result = %{
-            value: Decimal.round(current_rma, @precision),
+            value: current_rma,
             timestamp: get_data_timestamp(original_data, index),
             metadata: %{
               indicator: "ATR",
               period: period,
               smoothing: :rma,
-              true_range: Decimal.round(tr, @precision)
+              true_range: tr
             }
           }
 

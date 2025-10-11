@@ -53,8 +53,6 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
   alias TradingIndicators.{Types, Utils, Errors}
   require Decimal
 
-  @precision 6
-
   @doc """
   Calculates Accumulation/Distribution Line for the given data series.
 
@@ -221,12 +219,12 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
         }
 
         result = %{
-          value: Decimal.round(new_ad_value, @precision),
+          value: new_ad_value,
           timestamp: get_timestamp(data_point),
           metadata: %{
             indicator: "AccumulationDistribution",
-            money_flow_multiplier: Decimal.round(mf_multiplier, 6),
-            money_flow_volume: Decimal.round(mf_volume, @precision),
+            money_flow_multiplier: mf_multiplier,
+            money_flow_volume: mf_volume,
             volume: volume,
             close: close,
             high: high,
@@ -356,12 +354,12 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
       )
 
     first_result = %{
-      value: Decimal.round(first_mf_volume, @precision),
+      value: first_mf_volume,
       timestamp: get_timestamp(first_data),
       metadata: %{
         indicator: "AccumulationDistribution",
-        money_flow_multiplier: Decimal.round(first_mf_multiplier, 6),
-        money_flow_volume: Decimal.round(first_mf_volume, @precision),
+        money_flow_multiplier: first_mf_multiplier,
+        money_flow_volume: first_mf_volume,
         volume: first_data.volume,
         close: first_data.close,
         high: first_data.high,
@@ -386,12 +384,12 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
         new_ad = Decimal.add(prev_ad, mf_volume)
 
         result = %{
-          value: Decimal.round(new_ad, @precision),
+          value: new_ad,
           timestamp: get_timestamp(current_data),
           metadata: %{
             indicator: "AccumulationDistribution",
-            money_flow_multiplier: Decimal.round(mf_multiplier, 6),
-            money_flow_volume: Decimal.round(mf_volume, @precision),
+            money_flow_multiplier: mf_multiplier,
+            money_flow_volume: mf_volume,
             volume: current_data.volume,
             close: current_data.close,
             high: current_data.high,

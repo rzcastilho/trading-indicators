@@ -56,7 +56,6 @@ defmodule TradingIndicators.Trend.HMA do
   require Decimal
 
   @default_period 14
-  @precision 6
 
   @doc """
   Calculates Hull Moving Average for the given data series.
@@ -288,7 +287,7 @@ defmodule TradingIndicators.Trend.HMA do
           if sqrt_result do
             # Final HMA is ready
             result = %{
-              value: Decimal.round(sqrt_result.value, @precision),
+              value: sqrt_result.value,
               timestamp: timestamp,
               metadata: %{
                 indicator: "HMA",
@@ -385,7 +384,7 @@ defmodule TradingIndicators.Trend.HMA do
             Enum.map(hma_results, fn result ->
               %{
                 result
-                | value: Decimal.round(result.value, @precision),
+                | value: result.value,
                   metadata: %{
                     indicator: "HMA",
                     period: period,

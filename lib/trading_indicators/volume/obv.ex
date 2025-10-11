@@ -52,8 +52,6 @@ defmodule TradingIndicators.Volume.OBV do
   alias TradingIndicators.{Types, Utils, Errors}
   require Decimal
 
-  @precision 2
-
   @doc """
   Calculates On-Balance Volume for the given data series.
 
@@ -219,7 +217,7 @@ defmodule TradingIndicators.Volume.OBV do
         }
 
         result = %{
-          value: Decimal.round(new_obv_value, @precision),
+          value: new_obv_value,
           timestamp: get_timestamp(data_point),
           metadata: %{
             indicator: "OBV",
@@ -320,7 +318,7 @@ defmodule TradingIndicators.Volume.OBV do
     first_obv = Decimal.new(first_data.volume)
 
     first_result = %{
-      value: Decimal.round(first_obv, @precision),
+      value: first_obv,
       timestamp: get_timestamp(first_data),
       metadata: %{
         indicator: "OBV",
@@ -342,7 +340,7 @@ defmodule TradingIndicators.Volume.OBV do
           calculate_single_obv_step(prev_obv, current_data.close, prev_close, current_data.volume)
 
         result = %{
-          value: Decimal.round(new_obv, @precision),
+          value: new_obv,
           timestamp: get_timestamp(current_data),
           metadata: %{
             indicator: "OBV",

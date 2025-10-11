@@ -69,7 +69,6 @@ defmodule TradingIndicators.Momentum.RSI do
   @default_period 14
   @default_overbought 70
   @default_oversold 30
-  @precision 2
 
   @doc """
   Calculates Relative Strength Index for the given data series.
@@ -523,8 +522,7 @@ defmodule TradingIndicators.Momentum.RSI do
         rs = Decimal.div(avg_gain, avg_loss)
         one_plus_rs = Decimal.add(Decimal.new("1"), rs)
         division_result = Decimal.div(Decimal.new("100"), one_plus_rs)
-        rsi = Decimal.sub(Decimal.new("100"), division_result)
-        Decimal.round(rsi, @precision)
+        Decimal.sub(Decimal.new("100"), division_result)
     end
   end
 

@@ -61,7 +61,6 @@ defmodule TradingIndicators.Volatility.VolatilityIndex do
   @default_method :historical
   # Trading days in a year
   @default_periods_per_year 252
-  @precision 6
 
   # Mathematical constant: 2 * ln(2) - 1 ≈ 0.3862943611
   @two_ln2_minus_1 Decimal.from_float(2 * :math.log(2) - 1)
@@ -277,7 +276,7 @@ defmodule TradingIndicators.Volatility.VolatilityIndex do
         timestamp = get_timestamp(data_point)
 
         result = %{
-          value: Decimal.round(volatility_value, @precision),
+          value: volatility_value,
           timestamp: timestamp,
           metadata: %{
             indicator: "VOLATILITY",
@@ -421,7 +420,7 @@ defmodule TradingIndicators.Volatility.VolatilityIndex do
         timestamp = get_data_timestamp(data, index)
 
         %{
-          value: Decimal.round(volatility, @precision),
+          value: volatility,
           timestamp: timestamp,
           metadata: %{
             indicator: "VOLATILITY",
@@ -448,7 +447,7 @@ defmodule TradingIndicators.Volatility.VolatilityIndex do
         timestamp = get_data_timestamp(data, index)
 
         %{
-          value: Decimal.round(volatility, @precision),
+          value: volatility,
           timestamp: timestamp,
           metadata: %{
             indicator: "VOLATILITY",
@@ -474,7 +473,7 @@ defmodule TradingIndicators.Volatility.VolatilityIndex do
         timestamp = get_data_timestamp(data, index)
 
         %{
-          value: Decimal.round(volatility, @precision),
+          value: volatility,
           timestamp: timestamp,
           metadata: %{
             indicator: "VOLATILITY",

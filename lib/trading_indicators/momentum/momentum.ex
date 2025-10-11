@@ -85,7 +85,6 @@ defmodule TradingIndicators.Momentum.Momentum do
   @default_source :close
   @default_smoothing 1
   @default_normalized false
-  @precision 2
 
   @doc """
   Calculates Momentum for the given data series.
@@ -477,12 +476,12 @@ defmodule TradingIndicators.Momentum.Momentum do
         # Normalize by historical price (similar to percentage change but without * 100)
         case Decimal.equal?(historical_price, Decimal.new("0")) do
           true -> Decimal.new("0")
-          false -> Decimal.div(difference, historical_price) |> Decimal.round(@precision)
+          false -> Decimal.div(difference, historical_price)
         end
 
       false ->
         # Raw price difference
-        Decimal.round(difference, @precision)
+        difference
     end
   end
 

@@ -71,7 +71,6 @@ defmodule TradingIndicators.Momentum.CCI do
 
   @default_period 20
   @default_constant "0.015"
-  @precision 2
 
   @doc """
   Calculates Commodity Channel Index for the given data series.
@@ -387,8 +386,7 @@ defmodule TradingIndicators.Momentum.CCI do
         Decimal.new("0")
 
       false ->
-        cci = Decimal.div(numerator, denominator)
-        Decimal.round(cci, @precision)
+        Decimal.div(numerator, denominator)
     end
   end
 

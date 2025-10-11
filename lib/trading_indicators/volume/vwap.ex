@@ -69,7 +69,6 @@ defmodule TradingIndicators.Volume.VWAP do
 
   @default_variant :close
   @default_session_reset :none
-  @precision 6
 
   @doc """
   Calculates Volume Weighted Average Price for the given data series.
@@ -278,15 +277,15 @@ defmodule TradingIndicators.Volume.VWAP do
           }
 
           result = %{
-            value: Decimal.round(vwap, @precision),
+            value: vwap,
             timestamp: timestamp,
             metadata: %{
               indicator: "VWAP",
               variant: variant,
               session_reset: session_reset,
-              price_used: Decimal.round(price, @precision),
+              price_used: price,
               volume: data_point.volume,
-              cumulative_volume: Decimal.round(final_cum_vol, 0),
+              cumulative_volume: final_cum_vol,
               session_reset_occurred: should_reset
             }
           }

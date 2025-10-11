@@ -55,7 +55,6 @@ defmodule TradingIndicators.Trend.EMA do
   require Decimal
 
   @default_period 12
-  @precision 6
 
   @doc """
   Calculates Exponential Moving Average for the given data series.
@@ -278,7 +277,7 @@ defmodule TradingIndicators.Trend.EMA do
           timestamp = get_timestamp(data_point)
 
           result = %{
-            value: Decimal.round(new_ema, @precision),
+            value: new_ema,
             timestamp: timestamp,
             metadata: %{
               indicator: "EMA",
@@ -465,7 +464,7 @@ defmodule TradingIndicators.Trend.EMA do
         timestamp = get_data_timestamp(original_data, index)
 
         result = %{
-          value: Decimal.round(new_ema, @precision),
+          value: new_ema,
           timestamp: timestamp,
           metadata: %{
             indicator: "EMA",
@@ -482,7 +481,7 @@ defmodule TradingIndicators.Trend.EMA do
     first_timestamp = get_data_timestamp(original_data, 0)
 
     first_result = %{
-      value: Decimal.round(first_price, @precision),
+      value: first_price,
       timestamp: first_timestamp,
       metadata: %{
         indicator: "EMA",
@@ -512,7 +511,7 @@ defmodule TradingIndicators.Trend.EMA do
         timestamp = get_data_timestamp(original_data, index)
 
         result = %{
-          value: Decimal.round(new_ema, @precision),
+          value: new_ema,
           timestamp: timestamp,
           metadata: %{
             indicator: "EMA",
@@ -529,7 +528,7 @@ defmodule TradingIndicators.Trend.EMA do
     initial_timestamp = get_data_timestamp(original_data, period - 1)
 
     initial_result = %{
-      value: Decimal.round(initial_ema, @precision),
+      value: initial_ema,
       timestamp: initial_timestamp,
       metadata: %{
         indicator: "EMA",
