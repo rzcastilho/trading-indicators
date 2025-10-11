@@ -48,7 +48,6 @@ defmodule TradingIndicators.Trend.SMA do
   require Decimal
 
   @default_period 20
-  @precision 2
 
   @doc """
   Calculates Simple Moving Average for the given data series.
@@ -231,7 +230,7 @@ defmodule TradingIndicators.Trend.SMA do
       }
 
       if new_count >= period do
-        sma_value = Utils.mean(new_prices) |> Decimal.round(@precision)
+        sma_value = Utils.mean(new_prices)
         timestamp = get_timestamp(data_point)
 
         result = %{
@@ -320,7 +319,7 @@ defmodule TradingIndicators.Trend.SMA do
       |> Utils.sliding_window(period)
       |> Enum.with_index(period - 1)
       |> Enum.map(fn {window, index} ->
-        sma_value = Utils.mean(window) |> Decimal.round(@precision)
+        sma_value = Utils.mean(window)
         timestamp = get_data_timestamp(original_data, index)
 
         %{
