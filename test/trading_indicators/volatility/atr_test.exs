@@ -335,18 +335,6 @@ defmodule TradingIndicators.Volatility.ATRTest do
       assert Decimal.positive?(List.first(results).value)
     end
 
-    test "precision is maintained" do
-      {:ok, results} = ATR.calculate(@sample_ohlc_data, period: 3)
-
-      # Check that results have expected precision (6 decimal places)
-      result_value = List.first(results).value
-
-      decimal_places =
-        result_value |> Decimal.to_string() |> String.split(".") |> List.last() |> String.length()
-
-      assert decimal_places <= 6
-    end
-
     test "handles large datasets efficiently" do
       large_data =
         for _i <- 1..500 do

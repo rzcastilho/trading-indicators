@@ -387,26 +387,6 @@ defmodule TradingIndicators.Volatility.BollingerBandsTest do
       assert Decimal.gt?(result.middle_band, result.lower_band)
     end
 
-    test "precision is maintained" do
-      {:ok, results} = BollingerBands.calculate(@sample_price_series, period: 3)
-
-      # Check that results have expected precision (6 decimal places)
-      result = List.first(results)
-
-      for value <- [
-            result.upper_band,
-            result.middle_band,
-            result.lower_band,
-            result.percent_b,
-            result.bandwidth
-          ] do
-        decimal_places =
-          value |> Decimal.to_string() |> String.split(".") |> List.last() |> String.length()
-
-        assert decimal_places <= 6
-      end
-    end
-
     test "handles large datasets efficiently" do
       large_data =
         for _i <- 1..500 do

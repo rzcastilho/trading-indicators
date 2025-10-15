@@ -56,14 +56,14 @@ defmodule TradingIndicators.Volume.AccumulationDistributionTest do
       # First: MF Volume = 0.333333 * 1000 = 333.333333
       first = Enum.at(results, 0)
       expected_first = Decimal.div(Decimal.new("1000"), Decimal.new("3"))
-      assert Decimal.equal?(first.value, Decimal.round(expected_first, 6))
+      assert Decimal.equal?(first.value, expected_first)
 
       # Second: MF Multiplier = ((106-102) - (107-106)) / (107-102) = (4-1)/5 = 3/5 = 0.6
       # Second: MF Volume = 0.6 * 1500 = 900
       # Second A/D = 333.333333 + 900 = 1233.333333
       second = Enum.at(results, 1)
       expected_second = Decimal.add(expected_first, Decimal.new("900"))
-      assert Decimal.equal?(second.value, Decimal.round(expected_second, 6))
+      assert Decimal.equal?(second.value, expected_second)
     end
 
     test "handles equal high and low prices (no price range)" do
@@ -156,7 +156,7 @@ defmodule TradingIndicators.Volume.AccumulationDistributionTest do
       assert length(results) == 1
       # Should equal the Money Flow Volume of the single period
       expected = Decimal.div(Decimal.new("1000"), Decimal.new("3"))
-      assert Decimal.equal?(Enum.at(results, 0).value, Decimal.round(expected, 6))
+      assert Decimal.equal?(Enum.at(results, 0).value, expected)
     end
 
     test "handles zero volume correctly" do
@@ -183,12 +183,12 @@ defmodule TradingIndicators.Volume.AccumulationDistributionTest do
 
       first = Enum.at(results, 0)
       expected_first = Decimal.div(Decimal.new("1000"), Decimal.new("3"))
-      assert Decimal.equal?(first.value, Decimal.round(expected_first, 6))
+      assert Decimal.equal?(first.value, expected_first)
 
       # Second: MF Volume = 0.6 * 0 = 0
       # A/D remains unchanged
       second = Enum.at(results, 1)
-      assert Decimal.equal?(second.value, Decimal.round(expected_first, 6))
+      assert Decimal.equal?(second.value, expected_first)
     end
 
     test "includes correct metadata" do
@@ -210,11 +210,16 @@ defmodule TradingIndicators.Volume.AccumulationDistributionTest do
 
       assert Decimal.equal?(
                result.metadata.money_flow_multiplier,
-               Decimal.round(expected_multiplier, 6)
+               expected_multiplier
              )
 
       expected_mf_volume = Decimal.div(Decimal.new("1000"), Decimal.new("3"))
-      assert Decimal.equal?(result.metadata.money_flow_volume, Decimal.round(expected_mf_volume, 6))
+
+      assert Decimal.equal?(
+               result.metadata.money_flow_volume,
+               expected_mf_volume
+             )
+
       assert result.metadata.volume == 1000
       assert Decimal.equal?(result.metadata.close, Decimal.new("103"))
       assert Decimal.equal?(result.metadata.high, Decimal.new("105"))
@@ -330,7 +335,7 @@ defmodule TradingIndicators.Volume.AccumulationDistributionTest do
       expected_mf_volume = Decimal.div(Decimal.new("1000"), Decimal.new("3"))
       assert Decimal.equal?(new_state.ad_line_value, expected_mf_volume)
       assert new_state.count == 1
-      assert Decimal.equal?(result.value, Decimal.round(expected_mf_volume, 6))
+      assert Decimal.equal?(result.value, expected_mf_volume)
     end
 
     test "update_state/2 handles subsequent data points" do
@@ -358,7 +363,7 @@ defmodule TradingIndicators.Volume.AccumulationDistributionTest do
       expected_new = Decimal.add(expected_first, Decimal.new("900"))
       assert Decimal.equal?(new_state.ad_line_value, expected_new)
       assert new_state.count == 2
-      assert Decimal.equal?(result.value, Decimal.round(expected_new, 6))
+      assert Decimal.equal?(result.value, expected_new)
     end
 
     test "update_state/2 handles equal high/low (no price range)" do

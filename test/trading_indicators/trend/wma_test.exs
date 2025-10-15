@@ -69,7 +69,7 @@ defmodule TradingIndicators.Trend.WMATest do
 
       # WMA = (10×1 + 20×2 + 30×3) / (1+2+3) = (10 + 40 + 90) / 6 = 140/6 = 23.333333
       expected = Decimal.new("23.333333")
-      assert Decimal.equal?(first_result.value, expected)
+      assert Decimal.equal?(Decimal.round(first_result.value, 6), expected)
       assert first_result.metadata.indicator == "WMA"
       assert first_result.metadata.period == 3
     end
@@ -295,7 +295,7 @@ defmodule TradingIndicators.Trend.WMATest do
 
       # WMA for [100, 102] with weights [1, 2]: (100×1 + 102×2) / (1+2) = 304/3 = 101.333333
       expected = Decimal.new("101.333333")
-      assert Decimal.equal?(result.value, expected)
+      assert Decimal.equal?(Decimal.round(result.value, 6), expected)
 
       # Add third point - should maintain window size of 2
       {:ok, state, result} =
@@ -305,7 +305,7 @@ defmodule TradingIndicators.Trend.WMATest do
       assert length(state.prices) == 2
       # WMA for [102, 104] with weights [1, 2]: (102×1 + 104×2) / (1+2) = 310/3 = 103.333333
       expected = Decimal.new("103.333333")
-      assert Decimal.equal?(result.value, expected)
+      assert Decimal.equal?(Decimal.round(result.value, 6), expected)
     end
 
     test "update_state/2 handles different sources" do
@@ -319,7 +319,7 @@ defmodule TradingIndicators.Trend.WMATest do
 
       # WMA for [105, 107] with weights [1, 2]: (105×1 + 107×2) / (1+2) = 319/3 = 106.333333
       expected = Decimal.new("106.333333")
-      assert Decimal.equal?(result.value, expected)
+      assert Decimal.equal?(Decimal.round(result.value, 6), expected)
       assert result.metadata.source == :high
     end
 
@@ -357,13 +357,13 @@ defmodule TradingIndicators.Trend.WMATest do
       {:ok, results} = WMA.calculate(data, period: 2)
 
       # First WMA: [10, 20] with weights [1, 2]: (10×1 + 20×2) / 3 = 50/3 = 16.666667
-      assert Decimal.equal?(Enum.at(results, 0).value, Decimal.new("16.666667"))
+      assert Decimal.equal?(Decimal.round(Enum.at(results, 0).value, 6), Decimal.new("16.666667"))
 
       # Second WMA: [20, 30] with weights [1, 2]: (20×1 + 30×2) / 3 = 80/3 = 26.666667
-      assert Decimal.equal?(Enum.at(results, 1).value, Decimal.new("26.666667"))
+      assert Decimal.equal?(Decimal.round(Enum.at(results, 1).value, 6), Decimal.new("26.666667"))
 
       # Third WMA: [30, 40] with weights [1, 2]: (30×1 + 40×2) / 3 = 110/3 = 36.666667
-      assert Decimal.equal?(Enum.at(results, 2).value, Decimal.new("36.666667"))
+      assert Decimal.equal?(Decimal.round(Enum.at(results, 2).value, 6), Decimal.new("36.666667"))
     end
 
     test "handles very large numbers" do

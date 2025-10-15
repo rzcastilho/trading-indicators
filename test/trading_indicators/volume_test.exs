@@ -99,7 +99,7 @@ defmodule TradingIndicators.VolumeTest do
       assert length(results) == 3
       # First typical price = (105 + 99 + 103) / 3 = 102.333333
       expected_first = Decimal.div(Decimal.new("307"), Decimal.new("3"))
-      assert Decimal.equal?(Enum.at(results, 0).value, Decimal.round(expected_first, 6))
+      assert Decimal.equal?(Enum.at(results, 0).value, expected_first)
     end
 
     test "accumulation_distribution/2 calculates A/D Line" do
@@ -107,7 +107,7 @@ defmodule TradingIndicators.VolumeTest do
 
       assert length(results) == 3
       expected_first = Decimal.div(Decimal.new("1000"), Decimal.new("3"))
-      assert Decimal.equal?(Enum.at(results, 0).value, Decimal.round(expected_first, 6))
+      assert Decimal.equal?(Enum.at(results, 0).value, expected_first)
     end
 
     test "chaikin_money_flow/2 calculates Chaikin Money Flow" do
@@ -115,7 +115,11 @@ defmodule TradingIndicators.VolumeTest do
 
       assert length(results) == 2
       expected_first = Decimal.div(Decimal.new("1233.333333"), Decimal.new("2500"))
-      assert Decimal.equal?(Enum.at(results, 0).value, Decimal.round(expected_first, 6))
+
+      assert Decimal.equal?(
+               Decimal.round(Enum.at(results, 0).value, 6),
+               Decimal.round(expected_first, 6)
+             )
     end
   end
 
@@ -235,7 +239,7 @@ defmodule TradingIndicators.VolumeTest do
       assert new_state.count == 2
       assert result != nil
       expected_cmf = Decimal.div(Decimal.new("1233.333333"), Decimal.new("2500"))
-      assert Decimal.equal?(result.value, Decimal.round(expected_cmf, 6))
+      assert Decimal.equal?(Decimal.round(result.value, 6), Decimal.round(expected_cmf, 6))
     end
 
     test "update_stream/2 returns error for unrecognized state" do

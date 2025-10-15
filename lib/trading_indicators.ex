@@ -171,16 +171,15 @@ defmodule TradingIndicators do
   ## Examples
 
       iex> TradingIndicators.categories()
-      []
+      [TradingIndicators.Trend, TradingIndicators.Momentum, TradingIndicators.Volatility, TradingIndicators.Volume]
   """
   @spec categories() :: [module()]
   def categories do
     [
-      # Will be implemented in subsequent phases
-      # TradingIndicators.Trend,
-      # TradingIndicators.Momentum,
-      # TradingIndicators.Volatility,
-      # TradingIndicators.Volume
+      TradingIndicators.Trend,
+      TradingIndicators.Momentum,
+      TradingIndicators.Volatility,
+      TradingIndicators.Volume
     ]
   end
 
