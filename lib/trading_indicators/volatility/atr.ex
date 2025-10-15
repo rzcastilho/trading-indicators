@@ -165,6 +165,28 @@ defmodule TradingIndicators.Volatility.ATR do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the ATR indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        description: "Number of periods to use in calculation"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time ATR calculation.
 
   ## Parameters

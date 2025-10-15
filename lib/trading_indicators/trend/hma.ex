@@ -177,6 +177,36 @@ defmodule TradingIndicators.Trend.HMA do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the Hull Moving Average indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 2,
+        description: "Number of periods to use in calculation"
+      },
+      %{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time HMA calculation.
 
   ## Parameters

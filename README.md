@@ -122,6 +122,31 @@ end
 
 Beyond basic indicator calculations, the library includes powerful advanced features:
 
+### Parameter Introspection
+
+All 22 indicators provide complete parameter metadata through the `parameter_metadata/0` function, enabling:
+
+```elixir
+# Discover all parameters for any indicator
+params = TradingIndicators.Momentum.RSI.parameter_metadata()
+
+# Each parameter includes:
+# - name: Parameter name
+# - type: Data type (:integer, :float, :atom, :string)
+# - default: Default value
+# - required: Whether it's required
+# - min/max: Value constraints
+# - options: Valid options (for enums)
+# - description: Human-readable description
+
+# Use for dynamic UI generation, validation, or documentation
+Enum.each(params, fn param ->
+  IO.puts("#{param.name} (#{param.type}): #{param.description}")
+  IO.puts("  Default: #{inspect(param.default)}")
+  if param.options, do: IO.puts("  Options: #{inspect(param.options)}")
+end)
+```
+
 ### Pipeline Composition
 Build complex multi-indicator workflows with automatic dependency resolution and parallel execution:
 

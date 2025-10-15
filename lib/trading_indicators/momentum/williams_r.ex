@@ -188,6 +188,46 @@ defmodule TradingIndicators.Momentum.WilliamsR do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the Williams %R indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        description: "Number of periods for calculation"
+      },
+      %{
+        name: :overbought,
+        type: :integer,
+        default: @default_overbought,
+        required: false,
+        min: -100,
+        max: 0,
+        description: "Overbought threshold level"
+      },
+      %{
+        name: :oversold,
+        type: :integer,
+        default: @default_oversold,
+        required: false,
+        min: -100,
+        max: 0,
+        description: "Oversold threshold level"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time Williams %R calculation.
 
   ## Parameters

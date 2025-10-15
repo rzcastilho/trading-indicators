@@ -187,6 +187,52 @@ defmodule TradingIndicators.Trend.MACD do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the MACD indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :fast_period,
+        type: :integer,
+        default: @default_fast_period,
+        required: false,
+        min: 1,
+        description: "Fast EMA period"
+      },
+      %{
+        name: :slow_period,
+        type: :integer,
+        default: @default_slow_period,
+        required: false,
+        min: 1,
+        description: "Slow EMA period"
+      },
+      %{
+        name: :signal_period,
+        type: :integer,
+        default: @default_signal_period,
+        required: false,
+        min: 1,
+        description: "Signal line EMA period"
+      },
+      %{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time MACD calculation.
 
   ## Parameters

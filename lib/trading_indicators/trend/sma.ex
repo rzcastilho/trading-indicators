@@ -162,6 +162,66 @@ defmodule TradingIndicators.Trend.SMA do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the SMA indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+
+  ## Example
+
+      iex> TradingIndicators.Trend.SMA.parameter_metadata()
+      [
+        %{
+          name: :period,
+          type: :integer,
+          default: 20,
+          required: false,
+          min: 1,
+          max: nil,
+          options: nil,
+          description: "Number of periods to use in SMA calculation"
+        },
+        %{
+          name: :source,
+          type: :atom,
+          default: :close,
+          required: false,
+          min: nil,
+          max: nil,
+          options: [:open, :high, :low, :close],
+          description: "Source price field to use"
+        }
+      ]
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods to use in SMA calculation"
+      },
+      %{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time SMA calculation.
 
   ## Parameters

@@ -197,6 +197,76 @@ defmodule TradingIndicators.Momentum.RSI do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the RSI indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Momentum.RSI.parameter_metadata()
+      iex> Enum.any?(metadata, fn param -> param.name == :period end)
+      true
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods for RSI calculation"
+      },
+      %{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      },
+      %{
+        name: :overbought,
+        type: :integer,
+        default: @default_overbought,
+        required: false,
+        min: 0,
+        max: 100,
+        options: nil,
+        description: "Overbought threshold level"
+      },
+      %{
+        name: :oversold,
+        type: :integer,
+        default: @default_oversold,
+        required: false,
+        min: 0,
+        max: 100,
+        options: nil,
+        description: "Oversold threshold level"
+      },
+      %{
+        name: :smoothing,
+        type: :atom,
+        default: :wilder,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:wilder, :sma],
+        description: "Smoothing method for gains and losses"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time RSI calculation.
 
   ## Parameters

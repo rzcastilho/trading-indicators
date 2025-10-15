@@ -195,6 +195,36 @@ defmodule TradingIndicators.Momentum.ROC do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the ROC indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        description: "Number of periods to look back"
+      },
+      %{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time ROC calculation.
 
   ## Parameters

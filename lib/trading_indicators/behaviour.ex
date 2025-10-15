@@ -80,6 +80,51 @@ defmodule TradingIndicators.Behaviour do
   @callback required_periods() :: non_neg_integer()
 
   @doc """
+  Returns metadata describing all parameters accepted by the indicator.
+
+  This callback provides comprehensive information about each parameter,
+  including its type, default value, validation constraints, and valid options.
+  This metadata can be used for:
+
+  - Automatic parameter validation
+  - Documentation generation
+  - UI construction (forms, parameter selectors)
+  - API introspection
+
+  ## Returns
+
+  - `[Types.param_metadata()]` - List of parameter metadata maps
+
+  ## Example
+
+      def parameter_metadata do
+        [
+          %{
+            name: :period,
+            type: :integer,
+            default: 20,
+            required: false,
+            min: 1,
+            max: nil,
+            options: nil,
+            description: "Number of periods to use in calculation"
+          },
+          %{
+            name: :source,
+            type: :atom,
+            default: :close,
+            required: false,
+            min: nil,
+            max: nil,
+            options: [:open, :high, :low, :close],
+            description: "Source price field to use"
+          }
+        ]
+      end
+  """
+  @callback parameter_metadata() :: [Types.param_metadata()]
+
+  @doc """
   Initializes the streaming state for the indicator.
 
   This callback is optional and only needed for indicators that support

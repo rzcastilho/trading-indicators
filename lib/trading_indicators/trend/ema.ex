@@ -188,6 +188,66 @@ defmodule TradingIndicators.Trend.EMA do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the EMA indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Trend.EMA.parameter_metadata()
+      iex> Enum.any?(metadata, fn param -> param.name == :smoothing end)
+      true
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods to use in EMA calculation"
+      },
+      %{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      },
+      %{
+        name: :smoothing,
+        type: :float,
+        default: nil,
+        required: false,
+        min: 0.0,
+        max: 1.0,
+        options: nil,
+        description: "Custom smoothing factor (overrides period-based calculation)"
+      },
+      %{
+        name: :initialization,
+        type: :atom,
+        default: :sma_bootstrap,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:sma_bootstrap, :first_value],
+        description: "Method to initialize EMA values"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time EMA calculation.
 
   ## Parameters

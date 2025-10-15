@@ -93,6 +93,52 @@ defmodule TradingIndicators.Trend.KAMA do
     Keyword.get(opts, :period, @default_period) + 1
   end
 
+  @doc """
+  Returns metadata describing all parameters accepted by the KAMA indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        description: "Number of periods for efficiency ratio calculation"
+      },
+      %{
+        name: :fast_period,
+        type: :integer,
+        default: @default_fast_period,
+        required: false,
+        min: 1,
+        description: "Fast smoothing period"
+      },
+      %{
+        name: :slow_period,
+        type: :integer,
+        default: @default_slow_period,
+        required: false,
+        min: 1,
+        description: "Slow smoothing period"
+      },
+      %{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+    ]
+  end
+
   @impl true
   def init_state(opts \\ []) do
     period = Keyword.get(opts, :period, @default_period)

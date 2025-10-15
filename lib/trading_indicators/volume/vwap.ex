@@ -159,6 +159,19 @@ defmodule TradingIndicators.Volume.VWAP do
   def required_periods, do: 1
 
   @doc """
+  Returns metadata describing all parameters accepted by the VWAP indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    []
+  end
+
+  @doc """
   Initializes streaming state for real-time VWAP calculation.
 
   ## Parameters

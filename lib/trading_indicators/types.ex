@@ -485,4 +485,70 @@ defmodule TradingIndicators.Types do
   def resolve_period(:medium), do: 21
   def resolve_period(:long), do: 50
   def resolve_period(period) when is_integer(period) and period > 0, do: period
+
+  @typedoc """
+  Parameter metadata specification for indicator parameters.
+
+  Provides comprehensive metadata about each parameter that an indicator accepts,
+  enabling automatic validation, documentation generation, and UI construction.
+
+  ## Fields
+
+  - `:name` - Parameter name as an atom
+  - `:type` - Parameter type (`:integer`, `:float`, `:string`, `:atom`)
+  - `:default` - Default value for the parameter
+  - `:required` - Whether the parameter is required (boolean)
+  - `:min` - Minimum allowed value (for numeric types, nil if no minimum)
+  - `:max` - Maximum allowed value (for numeric types, nil if no maximum)
+  - `:options` - List of valid options (for atom/string enums, nil if not applicable)
+  - `:description` - Human-readable description of the parameter (optional)
+
+  ## Examples
+
+      # Integer parameter with range
+      %{
+        name: :period,
+        type: :integer,
+        default: 20,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods to use in calculation"
+      }
+
+      # Atom parameter with valid options
+      %{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+
+      # Float parameter with minimum
+      %{
+        name: :multiplier,
+        type: :float,
+        default: 2.0,
+        required: false,
+        min: 0.0,
+        max: nil,
+        options: nil,
+        description: "Standard deviation multiplier"
+      }
+  """
+  @type param_metadata :: %{
+          name: atom(),
+          type: :integer | :float | :string | :atom,
+          default: term(),
+          required: boolean(),
+          min: number() | nil,
+          max: number() | nil,
+          options: [atom() | String.t()] | nil,
+          description: String.t() | nil
+        }
 end
