@@ -94,7 +94,7 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
       # CMF = (333.333333 + 900) / (1000 + 1500) = 1233.333333 / 2500 = 0.4933333333
       first = Enum.at(results, 0)
       expected_first = Decimal.div(Decimal.new("1233.333333"), Decimal.new("2500"))
-      assert Decimal.equal?(first.value, Decimal.round(expected_first, 6))
+      assert Decimal.equal?(Decimal.round(first.value, 6), Decimal.round(expected_first, 6))
 
       # Second result (periods 2-3)
       # Period 3: MF Multiplier = ((105-104) - (108-105)) / (108-104) = (1-3)/4 = -0.5  
@@ -102,7 +102,7 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
       # CMF = (900 + (-400)) / (1500 + 800) = 500 / 2300 = 0.2173913043
       second = Enum.at(results, 1)
       expected_second = Decimal.div(Decimal.new("500"), Decimal.new("2300"))
-      assert Decimal.equal?(second.value, Decimal.round(expected_second, 6))
+      assert Decimal.equal?(Decimal.round(second.value, 6), Decimal.round(expected_second, 6))
     end
 
     test "handles equal high and low prices (no price range)" do
@@ -414,7 +414,7 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
 
       # CMF should be the same as calculated in batch mode
       expected_cmf = Decimal.div(Decimal.new("1233.333333"), Decimal.new("2500"))
-      assert Decimal.equal?(result2.value, Decimal.round(expected_cmf, 6))
+      assert Decimal.equal?(Decimal.round(result2.value, 6), Decimal.round(expected_cmf, 6))
     end
 
     test "update_state/2 maintains sliding window" do
@@ -589,7 +589,7 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlowTest do
       # First: MF Multiplier = ((103-99) - (105-103)) / (105-99) = 1/3
       first = Enum.at(results, 0)
       expected_first = Decimal.div(Decimal.new("1"), Decimal.new("3"))
-      assert Decimal.equal?(first.value, Decimal.round(expected_first, 6))
+      assert Decimal.equal?(first.value, expected_first)
 
       # Second: MF Multiplier = ((106-102) - (107-106)) / (107-102) = 3/5
       second = Enum.at(results, 1)

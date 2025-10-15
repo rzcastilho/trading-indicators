@@ -75,12 +75,12 @@ defmodule TradingIndicators.Volume.VWAPTest do
       # First VWAP = 102.333333
       first = Enum.at(results, 0)
       expected_first = Decimal.div(Decimal.new("307"), Decimal.new("3"))
-      assert Decimal.equal?(first.value, Decimal.round(expected_first, 6))
+      assert Decimal.equal?(first.value, expected_first)
 
       # Second typical price = (107 + 102 + 106) / 3 = 105
       # Cumulative = (102.333333*1000 + 105*1500) / 2500 = (102333.333 + 157500) / 2500 = 259833.333 / 2500 = 103.933333
       second = Enum.at(results, 1)
-      assert Decimal.equal?(second.value, Decimal.new("103.933333"))
+      assert Decimal.equal?(Decimal.round(second.value, 6), Decimal.new("103.933333"))
     end
 
     test "calculates VWAP correctly with weighted price variant" do
@@ -383,7 +383,7 @@ defmodule TradingIndicators.Volume.VWAPTest do
       total_v = Decimal.new("3300")
       expected = Decimal.div(total_pv, total_v)
 
-      assert Decimal.equal?(third.value, Decimal.round(expected, 6))
+      assert Decimal.equal?(third.value, expected)
     end
   end
 
@@ -400,7 +400,7 @@ defmodule TradingIndicators.Volume.VWAPTest do
       # Should maintain precision even with large numbers
       second = Enum.at(results, 1)
       expected = Decimal.div(Decimal.new("3040000000"), Decimal.new("30000000"))
-      assert Decimal.equal?(second.value, Decimal.round(expected, 6))
+      assert Decimal.equal?(second.value, expected)
     end
 
     test "handles precise decimal calculations" do

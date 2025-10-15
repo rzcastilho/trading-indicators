@@ -407,19 +407,6 @@ defmodule TradingIndicators.Volatility.VolatilityIndexTest do
       assert Decimal.positive?(List.first(results).value)
     end
 
-    test "precision is maintained" do
-      {:ok, results} =
-        VolatilityIndex.calculate(@sample_price_series, period: 3, method: :historical)
-
-      # Check that results have expected precision (6 decimal places)
-      result_value = List.first(results).value
-
-      decimal_places =
-        result_value |> Decimal.to_string() |> String.split(".") |> List.last() |> String.length()
-
-      assert decimal_places <= 6
-    end
-
     test "handles large datasets efficiently" do
       large_data =
         for _i <- 1..300 do

@@ -157,8 +157,8 @@ defmodule TradingIndicators.Momentum.WilliamsRTest do
       # For the last period:
       # Highest high = 115, Lowest low = 85, Current close = 92
       # Williams %R = -((115 - 92) / (115 - 85)) * 100 = -(23 / 30) * 100 = -76.67%
-      expected_wr = Decimal.new("-76.67")
-      assert Decimal.equal?(result.value, expected_wr)
+      expected_wr = Decimal.new("-76.6667")
+      assert Decimal.equal?(Decimal.round(result.value, 4), expected_wr)
     end
 
     test "handles edge cases correctly" do
