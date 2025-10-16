@@ -12,7 +12,8 @@ A comprehensive Elixir library for technical analysis with **22 trading indicato
 - **🎯 Decimal Precision** - Uses Decimal library to eliminate floating-point errors
 - **⚡ Real-time Streaming** - All indicators support streaming/incremental updates
 - **🛡️ Robust Error Handling** - Comprehensive validation with meaningful error messages
-- **🧪 Extensively Tested** - 709 tests with 92 doctests, 100% success rate
+- **🔍 Parameter Introspection** - Complete metadata for all parameters with automatic validation
+- **🧪 Extensively Tested** - 777 tests with 100% pass rate, including comprehensive test coverage
 - **📚 Complete Documentation** - Detailed docs with examples and mathematical formulas
 - **🏗️ Consistent API** - Uniform interface across all indicators
 - **⚙️ Highly Configurable** - Customizable periods, sources, and parameters
@@ -442,6 +443,7 @@ All indicators implement `TradingIndicators.Behaviour` for consistency:
 @callback validate_params(opts :: keyword()) ::
   :ok | {:error, Exception.t()}
 @callback required_periods() :: pos_integer()
+@callback parameter_metadata() :: [Types.param_metadata()]
 
 # Optional streaming callbacks
 @callback init_state(opts :: keyword()) :: map()
@@ -463,6 +465,7 @@ Each category module provides a unified interface and convenience functions.
 - **`TradingIndicators.Streaming`** - Enhanced real-time streaming capabilities
 - **`TradingIndicators.Performance`** - Benchmarking and optimization tools
 - **`TradingIndicators.DataQuality`** - Data validation and cleaning utilities
+- **`TradingIndicators.ParamValidator`** - Automatic parameter validation using metadata
 - **`TradingIndicators.Utils`** - Common helper functions
 - **`TradingIndicators.Errors`** - Structured error types
 
