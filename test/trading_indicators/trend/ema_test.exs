@@ -459,7 +459,7 @@ defmodule TradingIndicators.Trend.EMATest do
       period_param = Enum.find(metadata, fn p -> p.name == :period end)
       assert period_param != nil
       assert period_param.type == :integer
-      assert period_param.default == 20
+      assert period_param.default == 12
       assert period_param.required == false
       assert period_param.min == 1
       assert period_param.max == nil

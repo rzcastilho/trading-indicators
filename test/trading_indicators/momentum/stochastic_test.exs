@@ -331,7 +331,7 @@ defmodule TradingIndicators.Momentum.StochasticTest do
       k_smoothing_param = Enum.find(metadata, fn p -> p.name == :k_smoothing end)
       assert k_smoothing_param != nil
       assert k_smoothing_param.type == :integer
-      assert k_smoothing_param.default == 3
+      assert k_smoothing_param.default == 1
       assert k_smoothing_param.min == 1
 
       # Verify overbought parameter

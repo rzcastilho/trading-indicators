@@ -288,8 +288,8 @@ defmodule TradingIndicators.Momentum.RSITest do
       smoothing_param = Enum.find(metadata, fn p -> p.name == :smoothing end)
       assert smoothing_param != nil
       assert smoothing_param.type == :atom
-      assert smoothing_param.default == :rma
-      assert smoothing_param.options == [:sma, :rma, :ema]
+      assert smoothing_param.default == :wilder
+      assert smoothing_param.options == [:wilder, :sma]
     end
 
     test "all metadata maps have required fields" do

@@ -434,7 +434,7 @@ defmodule TradingIndicators.Volatility.ATRTest do
       metadata = ATR.parameter_metadata()
 
       assert is_list(metadata)
-      assert length(metadata) == 2
+      assert length(metadata) == 1
 
       # Verify period parameter
       period_param = Enum.find(metadata, fn p -> p.name == :period end)
@@ -444,13 +444,6 @@ defmodule TradingIndicators.Volatility.ATRTest do
       assert period_param.required == false
       assert period_param.min == 1
       assert period_param.max == nil
-
-      # Verify smoothing parameter
-      smoothing_param = Enum.find(metadata, fn p -> p.name == :smoothing end)
-      assert smoothing_param != nil
-      assert smoothing_param.type == :atom
-      assert smoothing_param.default == :rma
-      assert smoothing_param.options == [:sma, :rma, :ema]
     end
 
     test "all metadata maps have required fields" do

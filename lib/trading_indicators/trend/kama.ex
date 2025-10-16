@@ -47,7 +47,7 @@ defmodule TradingIndicators.Trend.KAMA do
 
   @behaviour TradingIndicators.Behaviour
 
-  alias TradingIndicators.{Utils, Errors}
+  alias TradingIndicators.{Types, Utils, Errors}
   require Decimal
 
   @default_period 10
