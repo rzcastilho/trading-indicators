@@ -147,6 +147,30 @@ Enum.each(params, fn param ->
 end)
 ```
 
+### Automatic Parameter Validation
+
+Use parameter metadata to automatically validate indicator parameters:
+
+```elixir
+# Get parameter metadata for an indicator
+metadata = TradingIndicators.Momentum.RSI.parameter_metadata()
+
+# Validate parameters against metadata
+params = [period: 14, source: :close, overbought: 70]
+:ok = TradingIndicators.ParamValidator.validate_params(params, metadata)
+
+# Validation catches errors automatically
+invalid_params = [period: -5, source: :invalid]
+{:error, %TradingIndicators.Errors.InvalidParams{}} =
+  TradingIndicators.ParamValidator.validate_params(invalid_params, metadata)
+```
+
+The validator checks:
+- **Type validation**: Ensures values match declared types (integer, float, atom, string)
+- **Range validation**: Validates min/max constraints for numeric parameters
+- **Option validation**: Ensures enum-like parameters use valid options
+- **Required fields**: Verifies all required parameters are present
+
 ### Pipeline Composition
 Build complex multi-indicator workflows with automatic dependency resolution and parallel execution:
 
