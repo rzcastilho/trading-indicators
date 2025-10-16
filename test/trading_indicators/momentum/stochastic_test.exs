@@ -304,4 +304,63 @@ defmodule TradingIndicators.Momentum.StochasticTest do
       }
     end)
   end
+
+  describe "parameter_metadata/0" do
+    test "returns correct parameter metadata" do
+      metadata = Stochastic.parameter_metadata()
+
+      assert is_list(metadata)
+      assert length(metadata) == 5
+
+      # Verify k_period parameter
+      k_period_param = Enum.find(metadata, fn p -> p.name == :k_period end)
+      assert k_period_param != nil
+      assert k_period_param.type == :integer
+      assert k_period_param.default == 14
+      assert k_period_param.required == false
+      assert k_period_param.min == 1
+
+      # Verify d_period parameter
+      d_period_param = Enum.find(metadata, fn p -> p.name == :d_period end)
+      assert d_period_param != nil
+      assert d_period_param.type == :integer
+      assert d_period_param.default == 3
+      assert d_period_param.min == 1
+
+      # Verify k_smoothing parameter
+      k_smoothing_param = Enum.find(metadata, fn p -> p.name == :k_smoothing end)
+      assert k_smoothing_param != nil
+      assert k_smoothing_param.type == :integer
+      assert k_smoothing_param.default == 3
+      assert k_smoothing_param.min == 1
+
+      # Verify overbought parameter
+      overbought_param = Enum.find(metadata, fn p -> p.name == :overbought end)
+      assert overbought_param != nil
+      assert overbought_param.type == :integer
+      assert overbought_param.default == 80
+      assert overbought_param.min == 0
+      assert overbought_param.max == 100
+
+      # Verify oversold parameter
+      oversold_param = Enum.find(metadata, fn p -> p.name == :oversold end)
+      assert oversold_param != nil
+      assert oversold_param.type == :integer
+      assert oversold_param.default == 20
+      assert oversold_param.min == 0
+      assert oversold_param.max == 100
+    end
+
+    test "all metadata maps have required fields" do
+      metadata = Stochastic.parameter_metadata()
+
+      Enum.each(metadata, fn param ->
+        assert Map.has_key?(param, :name)
+        assert Map.has_key?(param, :type)
+        assert Map.has_key?(param, :default)
+        assert Map.has_key?(param, :required)
+        assert Map.has_key?(param, :description)
+      end)
+    end
+  end
 end

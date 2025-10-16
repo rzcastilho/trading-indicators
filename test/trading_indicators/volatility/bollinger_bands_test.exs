@@ -462,4 +462,56 @@ defmodule TradingIndicators.Volatility.BollingerBandsTest do
       assert Decimal.eq?(Decimal.round(distance_2x, 6), Decimal.round(expected_distance_2x, 6))
     end
   end
+
+  describe "parameter_metadata/0" do
+    test "returns correct parameter metadata" do
+      metadata = BollingerBands.parameter_metadata()
+
+      assert is_list(metadata)
+      assert length(metadata) == 3
+
+      # Verify period parameter
+      period_param = Enum.find(metadata, fn p -> p.name == :period end)
+      assert period_param != nil
+      assert period_param.type == :integer
+      assert period_param.default == 20
+      assert period_param.required == false
+      assert period_param.min == 2
+      assert period_param.max == nil
+      assert period_param.options == nil
+      assert period_param.description == "Number of periods for SMA and Standard Deviation"
+
+      # Verify multiplier parameter
+      multiplier_param = Enum.find(metadata, fn p -> p.name == :multiplier end)
+      assert multiplier_param != nil
+      assert multiplier_param.type == :float
+      assert multiplier_param.default == 2.0
+      assert multiplier_param.required == false
+      assert multiplier_param.min == 0.0
+      assert multiplier_param.max == nil
+      assert multiplier_param.description == "Standard deviation multiplier for bands"
+
+      # Verify source parameter
+      source_param = Enum.find(metadata, fn p -> p.name == :source end)
+      assert source_param != nil
+      assert source_param.type == :atom
+      assert source_param.default == :close
+      assert source_param.options == [:open, :high, :low, :close]
+    end
+
+    test "all metadata maps have required fields" do
+      metadata = BollingerBands.parameter_metadata()
+
+      Enum.each(metadata, fn param ->
+        assert Map.has_key?(param, :name)
+        assert Map.has_key?(param, :type)
+        assert Map.has_key?(param, :default)
+        assert Map.has_key?(param, :required)
+        assert Map.has_key?(param, :min)
+        assert Map.has_key?(param, :max)
+        assert Map.has_key?(param, :options)
+        assert Map.has_key?(param, :description)
+      end)
+    end
+  end
 end

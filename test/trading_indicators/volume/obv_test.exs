@@ -283,4 +283,13 @@ defmodule TradingIndicators.Volume.OBVTest do
       assert Decimal.is_decimal(last_result.value)
     end
   end
+
+  describe "parameter_metadata/0" do
+    test "returns empty list for indicators without parameters" do
+      metadata = OBV.parameter_metadata()
+
+      assert is_list(metadata)
+      assert length(metadata) == 0
+    end
+  end
 end

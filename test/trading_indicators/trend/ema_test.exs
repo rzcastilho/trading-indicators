@@ -447,4 +447,62 @@ defmodule TradingIndicators.Trend.EMATest do
       end)
     end
   end
+
+  describe "parameter_metadata/0" do
+    test "returns correct parameter metadata" do
+      metadata = EMA.parameter_metadata()
+
+      assert is_list(metadata)
+      assert length(metadata) == 4
+
+      # Verify period parameter
+      period_param = Enum.find(metadata, fn p -> p.name == :period end)
+      assert period_param != nil
+      assert period_param.type == :integer
+      assert period_param.default == 20
+      assert period_param.required == false
+      assert period_param.min == 1
+      assert period_param.max == nil
+      assert period_param.options == nil
+      assert period_param.description == "Number of periods to use in EMA calculation"
+
+      # Verify source parameter
+      source_param = Enum.find(metadata, fn p -> p.name == :source end)
+      assert source_param != nil
+      assert source_param.type == :atom
+      assert source_param.default == :close
+      assert source_param.options == [:open, :high, :low, :close]
+
+      # Verify smoothing parameter
+      smoothing_param = Enum.find(metadata, fn p -> p.name == :smoothing end)
+      assert smoothing_param != nil
+      assert smoothing_param.type == :float
+      assert smoothing_param.default == nil
+      assert smoothing_param.min == 0.0
+      assert smoothing_param.max == 1.0
+      assert smoothing_param.options == nil
+
+      # Verify initialization parameter
+      init_param = Enum.find(metadata, fn p -> p.name == :initialization end)
+      assert init_param != nil
+      assert init_param.type == :atom
+      assert init_param.default == :sma_bootstrap
+      assert init_param.options == [:sma_bootstrap, :first_value]
+    end
+
+    test "all metadata maps have required fields" do
+      metadata = EMA.parameter_metadata()
+
+      Enum.each(metadata, fn param ->
+        assert Map.has_key?(param, :name)
+        assert Map.has_key?(param, :type)
+        assert Map.has_key?(param, :default)
+        assert Map.has_key?(param, :required)
+        assert Map.has_key?(param, :min)
+        assert Map.has_key?(param, :max)
+        assert Map.has_key?(param, :options)
+        assert Map.has_key?(param, :description)
+      end)
+    end
+  end
 end
