@@ -175,12 +175,14 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
         required: false,
         min: 1,
+        max: nil,
+        options: nil,
         description: "Number of periods to use in calculation"
       }
     ]

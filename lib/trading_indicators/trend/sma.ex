@@ -172,7 +172,7 @@ defmodule TradingIndicators.Trend.SMA do
 
       iex> TradingIndicators.Trend.SMA.parameter_metadata()
       [
-        %{
+        %TradingIndicators.Types.ParamMetadata{
           name: :period,
           type: :integer,
           default: 20,
@@ -182,7 +182,7 @@ defmodule TradingIndicators.Trend.SMA do
           options: nil,
           description: "Number of periods to use in SMA calculation"
         },
-        %{
+        %TradingIndicators.Types.ParamMetadata{
           name: :source,
           type: :atom,
           default: :close,
@@ -198,7 +198,7 @@ defmodule TradingIndicators.Trend.SMA do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
@@ -208,7 +208,7 @@ defmodule TradingIndicators.Trend.SMA do
         options: nil,
         description: "Number of periods to use in SMA calculation"
       },
-      %{
+      %Types.ParamMetadata{
         name: :source,
         type: :atom,
         default: :close,

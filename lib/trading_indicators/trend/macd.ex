@@ -197,35 +197,43 @@ defmodule TradingIndicators.Trend.MACD do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :fast_period,
         type: :integer,
         default: @default_fast_period,
         required: false,
         min: 1,
+        max: nil,
+        options: nil,
         description: "Fast EMA period"
       },
-      %{
+      %Types.ParamMetadata{
         name: :slow_period,
         type: :integer,
         default: @default_slow_period,
         required: false,
         min: 1,
+        max: nil,
+        options: nil,
         description: "Slow EMA period"
       },
-      %{
+      %Types.ParamMetadata{
         name: :signal_period,
         type: :integer,
         default: @default_signal_period,
         required: false,
         min: 1,
+        max: nil,
+        options: nil,
         description: "Signal line EMA period"
       },
-      %{
+      %Types.ParamMetadata{
         name: :source,
         type: :atom,
         default: :close,
         required: false,
+        min: nil,
+        max: nil,
         options: [:open, :high, :low, :close],
         description: "Source price field to use"
       }

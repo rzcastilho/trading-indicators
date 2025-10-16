@@ -172,7 +172,7 @@ defmodule TradingIndicators.Trend.WMA do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
@@ -182,7 +182,7 @@ defmodule TradingIndicators.Trend.WMA do
         options: nil,
         description: "Number of periods to use in WMA calculation"
       },
-      %{
+      %Types.ParamMetadata{
         name: :source,
         type: :atom,
         default: :close,

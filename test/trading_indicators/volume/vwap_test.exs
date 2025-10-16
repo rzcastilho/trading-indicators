@@ -417,4 +417,50 @@ defmodule TradingIndicators.Volume.VWAPTest do
       assert Decimal.is_decimal(second.value)
     end
   end
+
+  describe "parameter_metadata/0" do
+    test "returns correct parameter metadata" do
+      metadata = VWAP.parameter_metadata()
+
+      assert is_list(metadata)
+      assert length(metadata) == 2
+
+      # Verify variant parameter
+      variant_param = Enum.find(metadata, fn p -> p.name == :variant end)
+      assert variant_param != nil
+      assert variant_param.type == :atom
+      assert variant_param.default == :close
+      assert variant_param.required == false
+      assert variant_param.min == nil
+      assert variant_param.max == nil
+      assert variant_param.options == [:close, :typical, :weighted]
+      assert variant_param.description == "Price calculation variant"
+
+      # Verify session_reset parameter
+      session_param = Enum.find(metadata, fn p -> p.name == :session_reset end)
+      assert session_param != nil
+      assert session_param.type == :atom
+      assert session_param.default == :none
+      assert session_param.required == false
+      assert session_param.min == nil
+      assert session_param.max == nil
+      assert session_param.options == [:none, :daily, :weekly, :monthly]
+      assert session_param.description == "Session reset frequency"
+    end
+
+    test "all metadata structs have required fields" do
+      metadata = VWAP.parameter_metadata()
+
+      Enum.each(metadata, fn param ->
+        assert Map.has_key?(param, :name)
+        assert Map.has_key?(param, :type)
+        assert Map.has_key?(param, :default)
+        assert Map.has_key?(param, :required)
+        assert Map.has_key?(param, :min)
+        assert Map.has_key?(param, :max)
+        assert Map.has_key?(param, :options)
+        assert Map.has_key?(param, :description)
+      end)
+    end
+  end
 end

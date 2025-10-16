@@ -194,20 +194,24 @@ defmodule TradingIndicators.Momentum.CCI do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
         required: false,
         min: 1,
+        max: nil,
+        options: nil,
         description: "Number of periods for calculation"
       },
-      %{
+      %Types.ParamMetadata{
         name: :constant,
         type: :float,
         default: 0.015,
         required: false,
         min: 0.0,
+        max: nil,
+        options: nil,
         description: "Lambert constant for normalization"
       }
     ]

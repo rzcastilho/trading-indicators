@@ -219,19 +219,23 @@ defmodule TradingIndicators.Momentum.Momentum do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
         required: false,
         min: 1,
+        max: nil,
+        options: nil,
         description: "Number of periods to look back"
       },
-      %{
+      %Types.ParamMetadata{
         name: :source,
         type: :atom,
         default: :close,
         required: false,
+        min: nil,
+        max: nil,
         options: [:open, :high, :low, :close],
         description: "Source price field to use"
       }

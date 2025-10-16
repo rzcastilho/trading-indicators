@@ -198,30 +198,34 @@ defmodule TradingIndicators.Momentum.WilliamsR do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
         required: false,
         min: 1,
+        max: nil,
+        options: nil,
         description: "Number of periods for calculation"
       },
-      %{
+      %Types.ParamMetadata{
         name: :overbought,
         type: :integer,
         default: @default_overbought,
         required: false,
         min: -100,
         max: 0,
+        options: nil,
         description: "Overbought threshold level"
       },
-      %{
+      %Types.ParamMetadata{
         name: :oversold,
         type: :integer,
         default: @default_oversold,
         required: false,
         min: -100,
         max: 0,
+        options: nil,
         description: "Oversold threshold level"
       }
     ]

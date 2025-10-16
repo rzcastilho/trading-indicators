@@ -204,7 +204,7 @@ defmodule TradingIndicators.Trend.EMA do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
@@ -214,7 +214,7 @@ defmodule TradingIndicators.Trend.EMA do
         options: nil,
         description: "Number of periods to use in EMA calculation"
       },
-      %{
+      %Types.ParamMetadata{
         name: :source,
         type: :atom,
         default: :close,
@@ -224,7 +224,7 @@ defmodule TradingIndicators.Trend.EMA do
         options: [:open, :high, :low, :close],
         description: "Source price field to use"
       },
-      %{
+      %Types.ParamMetadata{
         name: :smoothing,
         type: :float,
         default: nil,
@@ -234,7 +234,7 @@ defmodule TradingIndicators.Trend.EMA do
         options: nil,
         description: "Custom smoothing factor (overrides period-based calculation)"
       },
-      %{
+      %Types.ParamMetadata{
         name: :initialization,
         type: :atom,
         default: :sma_bootstrap,

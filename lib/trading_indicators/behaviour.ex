@@ -93,13 +93,13 @@ defmodule TradingIndicators.Behaviour do
 
   ## Returns
 
-  - `[Types.param_metadata()]` - List of parameter metadata maps
+  - `[Types.param_metadata()]` - List of parameter metadata structs
 
   ## Example
 
       def parameter_metadata do
         [
-          %{
+          %Types.ParamMetadata{
             name: :period,
             type: :integer,
             default: 20,
@@ -109,7 +109,7 @@ defmodule TradingIndicators.Behaviour do
             options: nil,
             description: "Number of periods to use in calculation"
           },
-          %{
+          %Types.ParamMetadata{
             name: :source,
             type: :atom,
             default: :close,

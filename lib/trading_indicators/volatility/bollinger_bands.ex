@@ -194,7 +194,7 @@ defmodule TradingIndicators.Volatility.BollingerBands do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
@@ -204,7 +204,7 @@ defmodule TradingIndicators.Volatility.BollingerBands do
         options: nil,
         description: "Number of periods for SMA and Standard Deviation"
       },
-      %{
+      %Types.ParamMetadata{
         name: :multiplier,
         type: :float,
         default: 2.0,
@@ -214,7 +214,7 @@ defmodule TradingIndicators.Volatility.BollingerBands do
         options: nil,
         description: "Standard deviation multiplier for bands"
       },
-      %{
+      %Types.ParamMetadata{
         name: :source,
         type: :atom,
         default: :close,

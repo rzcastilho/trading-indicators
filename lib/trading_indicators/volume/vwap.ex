@@ -163,12 +163,59 @@ defmodule TradingIndicators.Volume.VWAP do
 
   ## Returns
 
-  - List of parameter metadata maps
+  - List of parameter metadata structs
+
+  ## Example
+
+      iex> TradingIndicators.Volume.VWAP.parameter_metadata()
+      [
+        %TradingIndicators.Types.ParamMetadata{
+          name: :variant,
+          type: :atom,
+          default: :close,
+          required: false,
+          min: nil,
+          max: nil,
+          options: [:close, :typical, :weighted],
+          description: "Price calculation variant"
+        },
+        %TradingIndicators.Types.ParamMetadata{
+          name: :session_reset,
+          type: :atom,
+          default: :none,
+          required: false,
+          min: nil,
+          max: nil,
+          options: [:none, :daily, :weekly, :monthly],
+          description: "Session reset frequency"
+        }
+      ]
   """
   @impl true
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
-    []
+    [
+      %Types.ParamMetadata{
+        name: :variant,
+        type: :atom,
+        default: @default_variant,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:close, :typical, :weighted],
+        description: "Price calculation variant"
+      },
+      %Types.ParamMetadata{
+        name: :session_reset,
+        type: :atom,
+        default: @default_session_reset,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:none, :daily, :weekly, :monthly],
+        description: "Session reset frequency"
+      }
+    ]
   end
 
   @doc """

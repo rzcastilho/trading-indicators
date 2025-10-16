@@ -213,7 +213,7 @@ defmodule TradingIndicators.Momentum.RSI do
   @spec parameter_metadata() :: [Types.param_metadata()]
   def parameter_metadata do
     [
-      %{
+      %Types.ParamMetadata{
         name: :period,
         type: :integer,
         default: @default_period,
@@ -223,7 +223,7 @@ defmodule TradingIndicators.Momentum.RSI do
         options: nil,
         description: "Number of periods for RSI calculation"
       },
-      %{
+      %Types.ParamMetadata{
         name: :source,
         type: :atom,
         default: :close,
@@ -233,7 +233,7 @@ defmodule TradingIndicators.Momentum.RSI do
         options: [:open, :high, :low, :close],
         description: "Source price field to use"
       },
-      %{
+      %Types.ParamMetadata{
         name: :overbought,
         type: :integer,
         default: @default_overbought,
@@ -243,7 +243,7 @@ defmodule TradingIndicators.Momentum.RSI do
         options: nil,
         description: "Overbought threshold level"
       },
-      %{
+      %Types.ParamMetadata{
         name: :oversold,
         type: :integer,
         default: @default_oversold,
@@ -253,7 +253,7 @@ defmodule TradingIndicators.Momentum.RSI do
         options: nil,
         description: "Oversold threshold level"
       },
-      %{
+      %Types.ParamMetadata{
         name: :smoothing,
         type: :atom,
         default: :wilder,
