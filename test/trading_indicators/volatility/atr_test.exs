@@ -428,4 +428,37 @@ defmodule TradingIndicators.Volatility.ATRTest do
       assert Decimal.eq?(result.metadata.true_range, expected_tr)
     end
   end
+
+  describe "parameter_metadata/0" do
+    test "returns correct parameter metadata" do
+      metadata = ATR.parameter_metadata()
+
+      assert is_list(metadata)
+      assert length(metadata) == 1
+
+      # Verify period parameter
+      period_param = Enum.find(metadata, fn p -> p.name == :period end)
+      assert period_param != nil
+      assert period_param.type == :integer
+      assert period_param.default == 14
+      assert period_param.required == false
+      assert period_param.min == 1
+      assert period_param.max == nil
+    end
+
+    test "all metadata maps have required fields" do
+      metadata = ATR.parameter_metadata()
+
+      Enum.each(metadata, fn param ->
+        assert Map.has_key?(param, :name)
+        assert Map.has_key?(param, :type)
+        assert Map.has_key?(param, :default)
+        assert Map.has_key?(param, :required)
+        assert Map.has_key?(param, :min)
+        assert Map.has_key?(param, :max)
+        assert Map.has_key?(param, :options)
+        assert Map.has_key?(param, :description)
+      end)
+    end
+  end
 end

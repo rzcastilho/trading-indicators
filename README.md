@@ -12,7 +12,8 @@ A comprehensive Elixir library for technical analysis with **22 trading indicato
 - **🎯 Decimal Precision** - Uses Decimal library to eliminate floating-point errors
 - **⚡ Real-time Streaming** - All indicators support streaming/incremental updates
 - **🛡️ Robust Error Handling** - Comprehensive validation with meaningful error messages
-- **🧪 Extensively Tested** - 709 tests with 92 doctests, 100% success rate
+- **🔍 Parameter Introspection** - Complete metadata for all parameters with automatic validation
+- **🧪 Extensively Tested** - 777 tests with 100% pass rate, including comprehensive test coverage
 - **📚 Complete Documentation** - Detailed docs with examples and mathematical formulas
 - **🏗️ Consistent API** - Uniform interface across all indicators
 - **⚙️ Highly Configurable** - Customizable periods, sources, and parameters
@@ -121,6 +122,55 @@ end
 ## 🎯 Advanced Features
 
 Beyond basic indicator calculations, the library includes powerful advanced features:
+
+### Parameter Introspection
+
+All 22 indicators provide complete parameter metadata through the `parameter_metadata/0` function, enabling:
+
+```elixir
+# Discover all parameters for any indicator
+params = TradingIndicators.Momentum.RSI.parameter_metadata()
+
+# Each parameter includes:
+# - name: Parameter name
+# - type: Data type (:integer, :float, :atom, :string)
+# - default: Default value
+# - required: Whether it's required
+# - min/max: Value constraints
+# - options: Valid options (for enums)
+# - description: Human-readable description
+
+# Use for dynamic UI generation, validation, or documentation
+Enum.each(params, fn param ->
+  IO.puts("#{param.name} (#{param.type}): #{param.description}")
+  IO.puts("  Default: #{inspect(param.default)}")
+  if param.options, do: IO.puts("  Options: #{inspect(param.options)}")
+end)
+```
+
+### Automatic Parameter Validation
+
+Use parameter metadata to automatically validate indicator parameters:
+
+```elixir
+# Get parameter metadata for an indicator
+metadata = TradingIndicators.Momentum.RSI.parameter_metadata()
+
+# Validate parameters against metadata
+params = [period: 14, source: :close, overbought: 70]
+:ok = TradingIndicators.ParamValidator.validate_params(params, metadata)
+
+# Validation catches errors automatically
+invalid_params = [period: -5, source: :invalid]
+{:error, %TradingIndicators.Errors.InvalidParams{}} =
+  TradingIndicators.ParamValidator.validate_params(invalid_params, metadata)
+```
+
+The validator checks:
+- **Type validation**: Ensures values match declared types (integer, float, atom, string)
+- **Range validation**: Validates min/max constraints for numeric parameters
+- **Option validation**: Ensures enum-like parameters use valid options
+- **Required fields**: Verifies all required parameters are present
 
 ### Pipeline Composition
 Build complex multi-indicator workflows with automatic dependency resolution and parallel execution:
@@ -393,6 +443,7 @@ All indicators implement `TradingIndicators.Behaviour` for consistency:
 @callback validate_params(opts :: keyword()) ::
   :ok | {:error, Exception.t()}
 @callback required_periods() :: pos_integer()
+@callback parameter_metadata() :: [Types.param_metadata()]
 
 # Optional streaming callbacks
 @callback init_state(opts :: keyword()) :: map()
@@ -414,6 +465,7 @@ Each category module provides a unified interface and convenience functions.
 - **`TradingIndicators.Streaming`** - Enhanced real-time streaming capabilities
 - **`TradingIndicators.Performance`** - Benchmarking and optimization tools
 - **`TradingIndicators.DataQuality`** - Data validation and cleaning utilities
+- **`TradingIndicators.ParamValidator`** - Automatic parameter validation using metadata
 - **`TradingIndicators.Utils`** - Common helper functions
 - **`TradingIndicators.Errors`** - Structured error types
 

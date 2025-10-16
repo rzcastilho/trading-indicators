@@ -162,6 +162,40 @@ defmodule TradingIndicators.Trend.WMA do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the WMA indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %Types.ParamMetadata{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods to use in WMA calculation"
+      },
+      %Types.ParamMetadata{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time WMA calculation.
 
   ## Parameters

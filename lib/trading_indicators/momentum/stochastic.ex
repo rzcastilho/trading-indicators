@@ -203,6 +203,70 @@ defmodule TradingIndicators.Momentum.Stochastic do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the Stochastic Oscillator indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %Types.ParamMetadata{
+        name: :k_period,
+        type: :integer,
+        default: @default_k_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods for %K calculation"
+      },
+      %Types.ParamMetadata{
+        name: :d_period,
+        type: :integer,
+        default: @default_d_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods for %D smoothing"
+      },
+      %Types.ParamMetadata{
+        name: :k_smoothing,
+        type: :integer,
+        default: @default_k_smoothing,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Smoothing periods for %K"
+      },
+      %Types.ParamMetadata{
+        name: :overbought,
+        type: :integer,
+        default: @default_overbought,
+        required: false,
+        min: 0,
+        max: 100,
+        options: nil,
+        description: "Overbought threshold level"
+      },
+      %Types.ParamMetadata{
+        name: :oversold,
+        type: :integer,
+        default: @default_oversold,
+        required: false,
+        min: 0,
+        max: 100,
+        options: nil,
+        description: "Oversold threshold level"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time Stochastic calculation.
 
   ## Parameters

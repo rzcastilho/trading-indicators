@@ -485,4 +485,92 @@ defmodule TradingIndicators.Types do
   def resolve_period(:medium), do: 21
   def resolve_period(:long), do: 50
   def resolve_period(period) when is_integer(period) and period > 0, do: period
+
+  @typedoc """
+  Parameter metadata struct for indicator parameters.
+
+  Provides comprehensive metadata about each parameter that an indicator accepts,
+  enabling automatic validation, documentation generation, and UI construction.
+
+  ## Fields
+
+  - `:name` - Parameter name as an atom (required)
+  - `:type` - Parameter type (`:integer`, `:float`, `:string`, `:atom`) (required)
+  - `:default` - Default value for the parameter (required)
+  - `:required` - Whether the parameter is required (boolean) (required)
+  - `:min` - Minimum allowed value (for numeric types, nil if no minimum)
+  - `:max` - Maximum allowed value (for numeric types, nil if no maximum)
+  - `:options` - List of valid options (for atom/string enums, nil if not applicable)
+  - `:description` - Human-readable description of the parameter
+
+  ## Examples
+
+      # Integer parameter with range
+      %TradingIndicators.Types.ParamMetadata{
+        name: :period,
+        type: :integer,
+        default: 20,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods to use in calculation"
+      }
+
+      # Atom parameter with valid options
+      %TradingIndicators.Types.ParamMetadata{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+
+      # Float parameter with minimum
+      %TradingIndicators.Types.ParamMetadata{
+        name: :multiplier,
+        type: :float,
+        default: 2.0,
+        required: false,
+        min: 0.0,
+        max: nil,
+        options: nil,
+        description: "Standard deviation multiplier"
+      }
+  """
+  defmodule ParamMetadata do
+    @moduledoc """
+    Struct representing parameter metadata for trading indicators.
+
+    This struct ensures all parameter metadata has consistent structure
+    and enforces the presence of required fields.
+    """
+    @enforce_keys [:name, :type, :default, :required]
+    defstruct [
+      :name,
+      :type,
+      :default,
+      :required,
+      :min,
+      :max,
+      :options,
+      :description
+    ]
+
+    @type t :: %__MODULE__{
+            name: atom(),
+            type: :integer | :float | :string | :atom,
+            default: term(),
+            required: boolean(),
+            min: number() | nil,
+            max: number() | nil,
+            options: [atom() | String.t()] | nil,
+            description: String.t() | nil
+          }
+  end
+
+  @type param_metadata :: ParamMetadata.t()
 end

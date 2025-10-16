@@ -47,7 +47,7 @@ defmodule TradingIndicators.Trend.KAMA do
 
   @behaviour TradingIndicators.Behaviour
 
-  alias TradingIndicators.{Utils, Errors}
+  alias TradingIndicators.{Types, Utils, Errors}
   require Decimal
 
   @default_period 10
@@ -91,6 +91,60 @@ defmodule TradingIndicators.Trend.KAMA do
 
   def required_periods(opts) do
     Keyword.get(opts, :period, @default_period) + 1
+  end
+
+  @doc """
+  Returns metadata describing all parameters accepted by the KAMA indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %Types.ParamMetadata{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Number of periods for efficiency ratio calculation"
+      },
+      %Types.ParamMetadata{
+        name: :fast_period,
+        type: :integer,
+        default: @default_fast_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Fast smoothing period"
+      },
+      %Types.ParamMetadata{
+        name: :slow_period,
+        type: :integer,
+        default: @default_slow_period,
+        required: false,
+        min: 1,
+        max: nil,
+        options: nil,
+        description: "Slow smoothing period"
+      },
+      %Types.ParamMetadata{
+        name: :source,
+        type: :atom,
+        default: :close,
+        required: false,
+        min: nil,
+        max: nil,
+        options: [:open, :high, :low, :close],
+        description: "Source price field to use"
+      }
+    ]
   end
 
   @impl true

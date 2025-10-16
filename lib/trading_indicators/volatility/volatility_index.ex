@@ -190,6 +190,30 @@ defmodule TradingIndicators.Volatility.VolatilityIndex do
   end
 
   @doc """
+  Returns metadata describing all parameters accepted by the Volatility Index indicator.
+
+  ## Returns
+
+  - List of parameter metadata maps
+  """
+  @impl true
+  @spec parameter_metadata() :: [Types.param_metadata()]
+  def parameter_metadata do
+    [
+      %Types.ParamMetadata{
+        name: :period,
+        type: :integer,
+        default: @default_period,
+        required: false,
+        min: 2,
+        max: nil,
+        options: nil,
+        description: "Number of periods for calculation"
+      }
+    ]
+  end
+
+  @doc """
   Initializes streaming state for real-time Volatility Index calculation.
 
   ## Parameters
