@@ -76,6 +76,7 @@ All indicators implement `TradingIndicators.Behaviour` which defines:
 - `calculate/2` - Batch processing of historical data
 - `validate_params/1` - Parameter validation
 - `required_periods/0` - Minimum data requirements
+- `parameter_metadata/0` - Returns structured metadata about configurable parameters
 - `init_state/1` and `update_state/2` - Optional streaming support
 
 ### Category Module Structure
@@ -99,6 +100,7 @@ Each category module provides:
 - **TradingIndicators.Performance** - Benchmarking, memory profiling, caching with multiple eviction policies
 - **TradingIndicators.DataQuality** - Data validation, outlier detection, gap filling, quality scoring
 - **TradingIndicators.Security** - Input validation and sanitization
+- **TradingIndicators.ParamValidator** - Automatic parameter validation using metadata constraints
 
 ### Data Types
 
@@ -140,6 +142,53 @@ Results follow a consistent format:
 3. **Streaming State**: Each indicator maintains internal state for incremental updates
 4. **Type Safety**: Comprehensive `@spec` annotations throughout
 5. **Utilities**: Common functions in `TradingIndicators.Utils` for data extraction and manipulation
+6. **Parameter Introspection**: All indicators provide structured metadata through `parameter_metadata/0` callback
+
+### Parameter Introspection System
+
+All indicators implement the `parameter_metadata/0` callback which returns structured metadata about their configurable parameters. This enables:
+
+- **API Introspection**: Discover parameters programmatically without reading documentation
+- **Dynamic UI Generation**: Build configuration interfaces automatically
+- **Automatic Validation**: Validate parameters using `TradingIndicators.ParamValidator`
+- **Documentation Generation**: Auto-generate parameter tables and API docs
+
+#### ParamMetadata Structure
+
+Each parameter is described using `TradingIndicators.Types.ParamMetadata` struct with:
+- `:name` - Parameter name as atom (required)
+- `:type` - Parameter type: `:integer`, `:float`, `:string`, or `:atom` (required)
+- `:default` - Default value (required)
+- `:required` - Whether parameter is required (boolean, required)
+- `:min` - Minimum value for numeric parameters (optional)
+- `:max` - Maximum value for numeric parameters (optional)
+- `:options` - List of valid values for enum-like parameters (optional)
+- `:description` - Human-readable description (optional)
+
+#### Usage Example
+
+```elixir
+# Get parameter metadata for any indicator
+metadata = TradingIndicators.Momentum.RSI.parameter_metadata()
+
+# Returns list of ParamMetadata structs:
+# [
+#   %ParamMetadata{name: :period, type: :integer, default: 14, min: 1, ...},
+#   %ParamMetadata{name: :source, type: :atom, options: [:open, :high, :low, :close], ...},
+#   ...
+# ]
+
+# Automatic validation using metadata
+params = [period: 14, source: :close]
+:ok = TradingIndicators.ParamValidator.validate_params(params, metadata)
+```
+
+#### Implementation Notes
+
+- Indicators without parameters (e.g., OBV, A/D) return empty list `[]`
+- Use module attributes (`@default_period`) for default values to maintain DRY principle
+- ParamValidator provides automatic type, range, and option validation
+- Metadata must accurately reflect actual parameter behavior and validation logic
 
 ## Test Structure
 
@@ -158,14 +207,25 @@ Test configuration in `test/test_helper.exs`:
 When implementing a new indicator:
 
 1. Create module under appropriate category (e.g., `lib/trading_indicators/trend/my_indicator.ex`)
-2. Implement `TradingIndicators.Behaviour` callbacks
-3. Add comprehensive `@moduledoc` with mathematical formula and usage examples
-4. Include `@spec` type annotations for all public functions
-5. Add streaming support via `init_state/1` and `update_state/2` if applicable
+2. Implement `TradingIndicators.Behaviour` callbacks:
+   - `calculate/2` - Main calculation logic
+   - `validate_params/1` - Parameter validation
+   - `required_periods/0` - Minimum data requirements
+   - `parameter_metadata/0` - Parameter metadata (required)
+   - `init_state/1` and `update_state/2` - Optional streaming support
+3. Implement `parameter_metadata/0` callback:
+   - Return list of `TradingIndicators.Types.ParamMetadata` structs
+   - Include all configurable parameters with accurate metadata
+   - Use module attributes for default values (DRY principle)
+   - Return empty list `[]` if indicator has no parameters
+   - Ensure metadata matches validation logic in `validate_params/1`
+4. Add comprehensive `@moduledoc` with mathematical formula and usage examples
+5. Include `@spec` type annotations for all public functions
 6. Update category module to include new indicator
 7. Write comprehensive tests including:
    - Basic calculation tests
    - Edge cases (empty data, insufficient data, invalid params)
+   - Parameter metadata tests (verify structure and values)
    - Streaming tests if applicable
    - Doctests in module documentation
 8. Update documentation guides if introducing new patterns
