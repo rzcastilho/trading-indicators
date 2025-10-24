@@ -78,20 +78,29 @@ defmodule TradingIndicators.Trend.MACDTest do
 
       assert {:ok, low_results} = MACD.calculate(data, source: :low, fast_period: 5, slow_period: 8)
 
+      assert {:ok, volume_results} =
+               MACD.calculate(data, source: :volume, fast_period: 5, slow_period: 8)
+
       # Verify both have results
       assert length(high_results) >= 1
       assert length(low_results) >= 1
+      assert length(volume_results) >= 1
 
       first_high = List.first(high_results)
       first_low = List.first(low_results)
+      first_volume = List.first(volume_results)
 
       # Different sources should produce different MACD values (most of the time, unless data is very similar)
       # We'll check metadata instead of values since test data might produce similar values
       assert first_high.metadata.source == :high
       assert first_low.metadata.source == :low
+      assert first_volume.metadata.source == :volume
 
       # Values should be decimals
       assert Decimal.is_decimal(first_high.value.macd)
+      assert Decimal.is_decimal(first_volume.value.macd)
+      # Verify volume source produces valid results
+      assert Decimal.gt?(first_volume.value.macd, Decimal.new("0"))
       assert Decimal.is_decimal(first_low.value.macd)
     end
 

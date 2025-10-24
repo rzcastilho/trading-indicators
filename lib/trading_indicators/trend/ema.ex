@@ -35,7 +35,7 @@ defmodule TradingIndicators.Trend.EMA do
   ## Parameters
 
   - `:period` - Number of periods to use in calculation (required, must be >= 1)
-  - `:source` - Source price field to use (default: `:close`)
+  - `:source` - Source field to use: `:open`, `:high`, `:low`, `:close`, or `:volume` (default: `:close`)
   - `:smoothing` - Custom smoothing factor (optional, overrides period-based calculation)
   - `:initialization` - Method to initialize EMA (`:sma_bootstrap` or `:first_value`, default: `:sma_bootstrap`)
 
@@ -67,7 +67,7 @@ defmodule TradingIndicators.Trend.EMA do
   ## Options
 
   - `:period` - Number of periods (default: #{@default_period})
-  - `:source` - Price source (default: `:close`)
+  - `:source` - Source field: `:open`, `:high`, `:low`, `:close`, or `:volume` (default: `:close`)
   - `:smoothing` - Custom smoothing factor (optional)
   - `:initialization` - Initialization method (default: `:sma_bootstrap`)
 
@@ -221,7 +221,7 @@ defmodule TradingIndicators.Trend.EMA do
         required: false,
         min: nil,
         max: nil,
-        options: [:open, :high, :low, :close],
+        options: [:open, :high, :low, :close, :volume],
         description: "Source price field to use"
       },
       %Types.ParamMetadata{
@@ -397,7 +397,7 @@ defmodule TradingIndicators.Trend.EMA do
     {:error, Errors.invalid_period(period)}
   end
 
-  defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+  defp validate_source(source) when source in [:open, :high, :low, :close, :volume], do: :ok
 
   defp validate_source(source) do
     {:error,
@@ -405,7 +405,7 @@ defmodule TradingIndicators.Trend.EMA do
        message: "Invalid source: #{inspect(source)}",
        param: :source,
        value: source,
-       expected: "one of [:open, :high, :low, :close]"
+       expected: "one of [:open, :high, :low, :close, :volume]"
      }}
   end
 
@@ -489,6 +489,11 @@ defmodule TradingIndicators.Trend.EMA do
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
   defp extract_ohlcv_prices(data, :low), do: Utils.extract_lows(data)
+
+  defp extract_ohlcv_prices(data, :volume), do: Utils.extract_volumes_as_decimal(data)
+
+  defp extract_single_price(%{} = data_point, :volume),
+    do: Utils.extract_volume_as_decimal(data_point)
 
   defp extract_single_price(%{} = data_point, source) do
     Map.fetch!(data_point, source)

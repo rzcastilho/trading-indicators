@@ -95,10 +95,12 @@ defmodule TradingIndicators.Trend.SMATest do
       assert {:ok, high_results} = SMA.calculate(data, period: 2, source: :high)
       assert {:ok, low_results} = SMA.calculate(data, period: 2, source: :low)
       assert {:ok, open_results} = SMA.calculate(data, period: 2, source: :open)
+      assert {:ok, volume_results} = SMA.calculate(data, period: 2, source: :volume)
 
       assert length(high_results) == 4
       assert length(low_results) == 4
       assert length(open_results) == 4
+      assert length(volume_results) == 4
 
       # First high SMA: (105 + 107) / 2 = 106
       assert Decimal.equal?(Enum.at(high_results, 0).value, Decimal.new("106.0"))
@@ -108,6 +110,9 @@ defmodule TradingIndicators.Trend.SMATest do
 
       # First open SMA: (100 + 103) / 2 = 101.5
       assert Decimal.equal?(Enum.at(open_results, 0).value, Decimal.new("101.5"))
+
+      # First volume SMA: (1000 + 1200) / 2 = 1100
+      assert Decimal.equal?(Enum.at(volume_results, 0).value, Decimal.new("1100.0"))
     end
 
     test "handles price series input", %{data: data} do
@@ -432,7 +437,7 @@ defmodule TradingIndicators.Trend.SMATest do
       assert source_param.required == false
       assert source_param.min == nil
       assert source_param.max == nil
-      assert source_param.options == [:open, :high, :low, :close]
+      assert source_param.options == [:open, :high, :low, :close, :volume]
       assert source_param.description == "Source price field to use"
     end
 

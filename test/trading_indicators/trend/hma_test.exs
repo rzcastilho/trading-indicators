@@ -53,15 +53,21 @@ defmodule TradingIndicators.Trend.HMATest do
     test "works with different price sources", %{data: data} do
       assert {:ok, high_results} = HMA.calculate(data, period: 4, source: :high)
       assert {:ok, low_results} = HMA.calculate(data, period: 4, source: :low)
+      assert {:ok, volume_results} = HMA.calculate(data, period: 4, source: :volume)
 
       assert length(high_results) >= 1
       assert length(low_results) >= 1
+      assert length(volume_results) >= 1
 
       first_high = List.first(high_results)
       first_low = List.first(low_results)
+      first_volume = List.first(volume_results)
 
       assert first_high.metadata.source == :high
       assert first_low.metadata.source == :low
+      assert first_volume.metadata.source == :volume
+      # Verify volume source produces valid results
+      assert Decimal.gt?(first_volume.value, Decimal.new("0"))
     end
 
     test "handles price series input", %{data: data} do

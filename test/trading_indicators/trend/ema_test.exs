@@ -99,13 +99,17 @@ defmodule TradingIndicators.Trend.EMATest do
       assert {:ok, high_results} = EMA.calculate(data, period: 2, source: :high)
       assert {:ok, low_results} = EMA.calculate(data, period: 2, source: :low)
       assert {:ok, open_results} = EMA.calculate(data, period: 2, source: :open)
+      assert {:ok, volume_results} = EMA.calculate(data, period: 2, source: :volume)
 
       assert length(high_results) == 4
       assert length(low_results) == 4
       assert length(open_results) == 4
+      assert length(volume_results) == 4
 
       # Verify different sources produce different results
       refute Decimal.equal?(Enum.at(high_results, 0).value, Enum.at(low_results, 0).value)
+      # Verify volume source produces valid results
+      assert Decimal.gt?(Enum.at(volume_results, 0).value, Decimal.new("0"))
     end
 
     test "handles price series input", %{data: data} do

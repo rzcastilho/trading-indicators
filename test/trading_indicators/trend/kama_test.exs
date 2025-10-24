@@ -31,6 +31,34 @@ defmodule TradingIndicators.Trend.KAMATest do
       assert Map.has_key?(first_result.metadata, :efficiency_ratio)
     end
 
+    test "works with different price sources" do
+      # Create data with OHLCV values
+      data =
+        for i <- 0..15 do
+          price = 100 + i * 0.5
+
+          %{
+            open: Decimal.new(to_string(price - 0.5)),
+            high: Decimal.new(to_string(price + 1)),
+            low: Decimal.new(to_string(price - 1)),
+            close: Decimal.new(to_string(price)),
+            volume: 1000 + i * 50,
+            timestamp: DateTime.add(~U[2024-01-01 09:30:00Z], i, :minute)
+          }
+        end
+
+      assert {:ok, high_results} = KAMA.calculate(data, period: 10, source: :high)
+      assert {:ok, low_results} = KAMA.calculate(data, period: 10, source: :low)
+      assert {:ok, volume_results} = KAMA.calculate(data, period: 10, source: :volume)
+
+      assert length(high_results) >= 1
+      assert length(low_results) >= 1
+      assert length(volume_results) >= 1
+
+      # Verify volume source produces valid results
+      assert Decimal.gt?(List.first(volume_results).value, Decimal.new("0"))
+    end
+
     test "returns error for insufficient data" do
       short_data = [
         %{close: Decimal.new("100"), timestamp: ~U[2024-01-01 09:30:00Z]},
