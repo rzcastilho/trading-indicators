@@ -40,9 +40,9 @@ defmodule TradingIndicators.Trend.MACD do
   ## Parameters
 
   - `:fast_period` - Fast EMA period (default: 12, must be < slow_period)
-  - `:slow_period` - Slow EMA period (default: 26, must be > fast_period)  
+  - `:slow_period` - Slow EMA period (default: 26, must be > fast_period)
   - `:signal_period` - Signal line EMA period (default: 9)
-  - `:source` - Source price field to use (default: `:close`)
+  - `:source` - Source field to use: `:open`, `:high`, `:low`, `:close`, or `:volume` (default: `:close`)
 
   ## Output Format
 
@@ -83,7 +83,7 @@ defmodule TradingIndicators.Trend.MACD do
   - `:fast_period` - Fast EMA period (default: #{@default_fast_period})
   - `:slow_period` - Slow EMA period (default: #{@default_slow_period})
   - `:signal_period` - Signal line period (default: #{@default_signal_period})
-  - `:source` - Price source (default: `:close`)
+  - `:source` - Source field: `:open`, `:high`, `:low`, `:close`, or `:volume` (default: `:close`)
 
   ## Returns
 
@@ -435,13 +435,10 @@ defmodule TradingIndicators.Trend.MACD do
      }}
   end
 
-  defp extract_ohlcv_prices(data, :volume) do
-    Enum.map(data, fn point -> Decimal.new(point.volume) end)
-  end
+  defp extract_ohlcv_prices(data, :volume), do: Utils.extract_volumes_as_decimal(data)
 
-  defp extract_single_price(%{} = data_point, :volume) do
-    Decimal.new(Map.fetch!(data_point, :volume))
-  end
+  defp extract_single_price(%{} = data_point, :volume),
+    do: Utils.extract_volume_as_decimal(data_point)
 
   defp calculate_macd_values(data, fast_period, slow_period, signal_period, source) do
     # Calculate fast and slow EMAs

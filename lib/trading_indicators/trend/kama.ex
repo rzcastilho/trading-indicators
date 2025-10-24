@@ -31,9 +31,9 @@ defmodule TradingIndicators.Trend.KAMA do
   ## Parameters
 
   - `:period` - Number of periods for efficiency ratio calculation (default: 10)
-  - `:fast_period` - Fast smoothing period (default: 2)  
+  - `:fast_period` - Fast smoothing period (default: 2)
   - `:slow_period` - Slow smoothing period (default: 30)
-  - `:source` - Source price field to use (default: `:close`)
+  - `:source` - Source field to use: `:open`, `:high`, `:low`, `:close`, or `:volume` (default: `:close`)
 
   ## Notes
 
@@ -284,13 +284,10 @@ defmodule TradingIndicators.Trend.KAMA do
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
   defp extract_ohlcv_prices(data, :low), do: Utils.extract_lows(data)
 
-  defp extract_ohlcv_prices(data, :volume) do
-    Enum.map(data, fn point -> Decimal.new(point.volume) end)
-  end
+  defp extract_ohlcv_prices(data, :volume), do: Utils.extract_volumes_as_decimal(data)
 
-  defp extract_single_price(%{} = data_point, :volume) do
-    Decimal.new(Map.fetch!(data_point, :volume))
-  end
+  defp extract_single_price(%{} = data_point, :volume),
+    do: Utils.extract_volume_as_decimal(data_point)
 
   defp extract_single_price(%{} = data_point, source), do: Map.fetch!(data_point, source)
   defp extract_single_price(price, _source) when Decimal.is_decimal(price), do: price

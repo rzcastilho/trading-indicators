@@ -14,6 +14,8 @@ defmodule TradingIndicators.Utils do
   - `extract_lows/1` - Extract low prices from OHLCV data
   - `extract_opens/1` - Extract opening prices from OHLCV data
   - `extract_volumes/1` - Extract volume data from OHLCV data
+  - `extract_volumes_as_decimal/1` - Extract volume data as Decimal values
+  - `extract_volume_as_decimal/1` - Extract single volume value as Decimal
 
   ## Mathematical Functions
 
@@ -127,6 +129,56 @@ defmodule TradingIndicators.Utils do
   @spec extract_volumes(Types.data_series()) :: Types.volume_series()
   def extract_volumes(data) when is_list(data) do
     Enum.map(data, & &1.volume)
+  end
+
+  @doc """
+  Extracts volume data from OHLCV data series as Decimal values.
+
+  This is useful for trend indicators that need to calculate moving averages
+  or other statistics on volume using Decimal precision.
+
+  ## Parameters
+
+  - `data` - List of OHLCV data points
+
+  ## Returns
+
+  - List of volume values as Decimal
+
+  ## Example
+
+      iex> data = [
+      ...>   %{volume: 1000, close: Decimal.new("100.0")},
+      ...>   %{volume: 1200, close: Decimal.new("101.0")}
+      ...> ]
+      iex> TradingIndicators.Utils.extract_volumes_as_decimal(data)
+      [Decimal.new("1000"), Decimal.new("1200")]
+  """
+  @spec extract_volumes_as_decimal(Types.data_series()) :: [Decimal.t()]
+  def extract_volumes_as_decimal(data) when is_list(data) do
+    Enum.map(data, fn point -> Decimal.new(point.volume) end)
+  end
+
+  @doc """
+  Extracts a single volume value from a data point as Decimal.
+
+  ## Parameters
+
+  - `data_point` - Single OHLCV data point
+
+  ## Returns
+
+  - Volume value as Decimal
+
+  ## Example
+
+      iex> data_point = %{volume: 1000, close: Decimal.new("100.0")}
+      iex> TradingIndicators.Utils.extract_volume_as_decimal(data_point)
+      Decimal.new("1000")
+  """
+  @spec extract_volume_as_decimal(Types.ohlcv()) :: Decimal.t()
+  def extract_volume_as_decimal(%{volume: volume}) do
+    Decimal.new(volume)
   end
 
   @doc """
