@@ -204,7 +204,7 @@ defmodule TradingIndicators.Trend.HMA do
         required: false,
         min: nil,
         max: nil,
-        options: [:open, :high, :low, :close],
+        options: [:open, :high, :low, :close, :volume],
         description: "Source price field to use"
       }
     ]
@@ -380,7 +380,7 @@ defmodule TradingIndicators.Trend.HMA do
      }}
   end
 
-  defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+  defp validate_source(source) when source in [:open, :high, :low, :close, :volume], do: :ok
 
   defp validate_source(source) do
     {:error,
@@ -388,7 +388,7 @@ defmodule TradingIndicators.Trend.HMA do
        message: "Invalid source: #{inspect(source)}",
        param: :source,
        value: source,
-       expected: "one of [:open, :high, :low, :close]"
+       expected: "one of [:open, :high, :low, :close, :volume]"
      }}
   end
 

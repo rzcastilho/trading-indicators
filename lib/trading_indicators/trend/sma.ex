@@ -215,7 +215,7 @@ defmodule TradingIndicators.Trend.SMA do
         required: false,
         min: nil,
         max: nil,
-        options: [:open, :high, :low, :close],
+        options: [:open, :high, :low, :close, :volume],
         description: "Source price field to use"
       }
     ]
@@ -329,7 +329,7 @@ defmodule TradingIndicators.Trend.SMA do
     {:error, Errors.invalid_period(period)}
   end
 
-  defp validate_source(source) when source in [:open, :high, :low, :close], do: :ok
+  defp validate_source(source) when source in [:open, :high, :low, :close, :volume], do: :ok
 
   defp validate_source(source) do
     {:error,
@@ -337,7 +337,7 @@ defmodule TradingIndicators.Trend.SMA do
        message: "Invalid source: #{inspect(source)}",
        param: :source,
        value: source,
-       expected: "one of [:open, :high, :low, :close]"
+       expected: "one of [:open, :high, :low, :close, :volume]"
      }}
   end
 
@@ -357,6 +357,14 @@ defmodule TradingIndicators.Trend.SMA do
   defp extract_ohlcv_prices(data, :open), do: Utils.extract_opens(data)
   defp extract_ohlcv_prices(data, :high), do: Utils.extract_highs(data)
   defp extract_ohlcv_prices(data, :low), do: Utils.extract_lows(data)
+
+  defp extract_ohlcv_prices(data, :volume) do
+    Enum.map(data, fn point -> Decimal.new(point.volume) end)
+  end
+
+  defp extract_single_price(%{} = data_point, :volume) do
+    Decimal.new(Map.fetch!(data_point, :volume))
+  end
 
   defp extract_single_price(%{} = data_point, source) do
     Map.fetch!(data_point, source)
