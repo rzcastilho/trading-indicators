@@ -435,6 +435,14 @@ defmodule TradingIndicators.Trend.MACD do
      }}
   end
 
+  defp extract_ohlcv_prices(data, :volume) do
+    Enum.map(data, fn point -> Decimal.new(point.volume) end)
+  end
+
+  defp extract_single_price(%{} = data_point, :volume) do
+    Decimal.new(Map.fetch!(data_point, :volume))
+  end
+
   defp calculate_macd_values(data, fast_period, slow_period, signal_period, source) do
     # Calculate fast and slow EMAs
     with {:ok, fast_ema_results} <- EMA.calculate(data, period: fast_period, source: source),

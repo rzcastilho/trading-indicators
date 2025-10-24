@@ -114,16 +114,20 @@ defmodule TradingIndicators.Trend.WMATest do
       assert {:ok, high_results} = WMA.calculate(data, period: 2, source: :high)
       assert {:ok, low_results} = WMA.calculate(data, period: 2, source: :low)
       assert {:ok, open_results} = WMA.calculate(data, period: 2, source: :open)
+      assert {:ok, volume_results} = WMA.calculate(data, period: 2, source: :volume)
 
       assert length(high_results) == 4
       assert length(low_results) == 4
       assert length(open_results) == 4
+      assert length(volume_results) == 4
 
       # Different sources should produce different results
       first_high = List.first(high_results)
       first_low = List.first(low_results)
 
       refute Decimal.equal?(first_high.value, first_low.value)
+      # Verify volume source produces valid results
+      assert Decimal.gt?(List.first(volume_results).value, Decimal.new("0"))
     end
 
     test "handles price series input", %{data: data} do
