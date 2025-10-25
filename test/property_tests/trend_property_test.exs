@@ -2,9 +2,9 @@ defmodule TradingIndicators.PropertyTests.TrendTest do
   use ExUnit.Case
   use ExUnitProperties
 
-  alias TradingIndicators.Trend.{SMA, EMA, WMA, HMA, KAMA, MACD}
   alias TradingIndicators.TestSupport.PropertyGenerators
   alias TradingIndicators.TestSupport.TestHelpers
+  alias TradingIndicators.Trend.{EMA, MACD, SMA, WMA}
 
   @moduletag :property
 
@@ -39,12 +39,12 @@ defmodule TradingIndicators.PropertyTests.TrendTest do
 
         # SMA with period 1 should equal input values (compare decimals properly)
         result_values = Enum.map(result, & &1.value)
-        
+
         # Compare each decimal value individually to handle precision differences
         Enum.zip(result_values, prices)
         |> Enum.each(fn {result_val, expected_val} ->
-          assert Decimal.equal?(result_val, expected_val), 
-            "Expected #{expected_val} but got #{result_val}"
+          assert Decimal.equal?(result_val, expected_val),
+                 "Expected #{expected_val} but got #{result_val}"
         end)
       end
     end
@@ -91,6 +91,7 @@ defmodule TradingIndicators.PropertyTests.TrendTest do
 
         unless length(result) < 2 do
           result_values = Enum.map(result, & &1.value)
+
           case direction do
             :up -> assert_monotonic_increasing(result_values)
             :down -> assert_monotonic_decreasing(result_values)
@@ -132,12 +133,12 @@ defmodule TradingIndicators.PropertyTests.TrendTest do
             Decimal.lte?(sma_diff, Decimal.from_float(jump_value * 0.01)) ->
               # EMA should also be reasonably close (allow up to 15% of jump value)
               assert Decimal.lte?(ema_diff, Decimal.from_float(jump_value * 0.15))
-              
+
             # Case 2: Both are reasonably close - EMA should not be dramatically worse
             Decimal.lte?(sma_diff, Decimal.from_float(jump_value * 0.1)) ->
               # Allow EMA to be up to 5x worse in edge cases, but still reasonable
               assert Decimal.lte?(ema_diff, Decimal.mult(sma_diff, Decimal.new("5.0")))
-              
+
             # Case 3: General case - EMA should be better or comparable
             true ->
               # EMA should be no more than 50% worse than SMA in normal cases
@@ -213,25 +214,25 @@ defmodule TradingIndicators.PropertyTests.TrendTest do
           if length(result) > 0 do
             # Extract macd values from the result structure
             macd_values = Enum.map(result, fn item -> item.value.macd end)
-            
+
             # Calculate expected signal line (EMA of MACD values)
             {:ok, expected_signal_result} = EMA.calculate(macd_values, period: signal_period)
             expected_signal = Enum.map(expected_signal_result, & &1.value)
-            
+
             # Extract actual signal values from MACD results
             signal_values = Enum.map(result, fn item -> item.value.signal end)
-            
+
             # Filter out nil values (insufficient data)
-            actual_signals = Enum.filter(signal_values, & &1 != nil)
-            
+            actual_signals = Enum.filter(signal_values, &(&1 != nil))
+
             if length(expected_signal) > 0 and length(actual_signals) > 0 do
               # Take the comparable portion (they might differ in length due to warmup periods)
               comparable_length = min(length(expected_signal), length(actual_signals))
-              
+
               if comparable_length > 0 do
                 expected_slice = Enum.take(expected_signal, -comparable_length)
                 actual_slice = Enum.take(actual_signals, -comparable_length)
-                
+
                 # Values should be approximately equal
                 Enum.zip(actual_slice, expected_slice)
                 |> Enum.each(fn {actual, expected} ->

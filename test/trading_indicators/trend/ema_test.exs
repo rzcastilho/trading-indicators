@@ -475,7 +475,7 @@ defmodule TradingIndicators.Trend.EMATest do
       assert source_param != nil
       assert source_param.type == :atom
       assert source_param.default == :close
-      assert source_param.options == [:open, :high, :low, :close]
+      assert source_param.options == [:open, :high, :low, :close, :volume]
 
       # Verify smoothing parameter
       smoothing_param = Enum.find(metadata, fn p -> p.name == :smoothing end)

@@ -189,7 +189,7 @@ defmodule TradingIndicators.Trend.SMA do
           required: false,
           min: nil,
           max: nil,
-          options: [:open, :high, :low, :close],
+          options: [:open, :high, :low, :close, :volume],
           description: "Source price field to use"
         }
       ]

@@ -2,8 +2,8 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
   use ExUnit.Case
   require Decimal
 
-  alias TradingIndicators.TestSupport.{IntegrationHelpers, DataGenerator}
-  alias TradingIndicators.{Pipeline, Streaming}
+  alias TradingIndicators.Pipeline
+  alias TradingIndicators.TestSupport.{DataGenerator, IntegrationHelpers}
 
   @moduletag :integration
 
@@ -57,7 +57,7 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
             # Test basic indicators on each scenario
             sma_result = TradingIndicators.Trend.SMA.calculate(data, period: 10)
             ema_result = TradingIndicators.Trend.EMA.calculate(data, period: 10)
-            
+
             # Handle both success and error cases
             case {sma_result, ema_result} do
               {{:ok, sma_values}, {:ok, ema_values}} ->
@@ -71,12 +71,21 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
                          not (Decimal.nan?(result.value) or Decimal.inf?(result.value))
                        end),
                        "EMA produced non-finite values for #{scenario_name}"
-              
+
               _ ->
                 # Some scenarios should raise errors (like invalid data or insufficient data)
                 # insufficient data scenarios: small_data, single_point, two_points, extreme_prices, zero_volume
                 # invalid data scenarios: missing_fields, invalid_ohlc, empty_data
-                assert scenario_name in [:missing_fields, :invalid_ohlc, :empty_data, :small_data, :single_point, :two_points, :extreme_prices, :zero_volume],
+                assert scenario_name in [
+                         :missing_fields,
+                         :invalid_ohlc,
+                         :empty_data,
+                         :small_data,
+                         :single_point,
+                         :two_points,
+                         :extreme_prices,
+                         :zero_volume
+                       ],
                        "Unexpected error for #{scenario_name}"
             end
           rescue
@@ -84,7 +93,16 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
               # Some scenarios should raise errors (like invalid data or insufficient data)
               # insufficient data scenarios: small_data, single_point, two_points, extreme_prices, zero_volume
               # invalid data scenarios: missing_fields, invalid_ohlc, empty_data
-              assert scenario_name in [:missing_fields, :invalid_ohlc, :empty_data, :small_data, :single_point, :two_points, :extreme_prices, :zero_volume],
+              assert scenario_name in [
+                       :missing_fields,
+                       :invalid_ohlc,
+                       :empty_data,
+                       :small_data,
+                       :single_point,
+                       :two_points,
+                       :extreme_prices,
+                       :zero_volume
+                     ],
                      "Unexpected error for #{scenario_name}: #{inspect(error)}"
           end
         end
@@ -145,24 +163,31 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
             Enum.zip(batch_subset, stream_subset)
             |> Enum.each(fn {batch_val, stream_val} ->
               # Extract actual values from result structs if needed
-              batch_value = if is_map(batch_val) and Map.has_key?(batch_val, :value) do
-                batch_val.value
-              else
-                batch_val
-              end
-              
-              stream_value = if is_map(stream_val) and Map.has_key?(stream_val, :value) do
-                stream_val.value
-              else
-                stream_val
-              end
-              
+              batch_value =
+                if is_map(batch_val) and Map.has_key?(batch_val, :value) do
+                  batch_val.value
+                else
+                  batch_val
+                end
+
+              stream_value =
+                if is_map(stream_val) and Map.has_key?(stream_val, :value) do
+                  stream_val.value
+                else
+                  stream_val
+                end
+
               diff = Decimal.abs(Decimal.sub(batch_value, stream_value))
+
               # Different tolerance based on indicator type - RSI is more sensitive to calculation method
-              tolerance_percent = case indicator do
-                :rsi_14 -> "0.60"  # 60% tolerance for RSI due to streaming implementation differences (TODO: fix RSI streaming bug)
-                _ -> "0.05"        # 5% tolerance for other indicators
-              end
+              tolerance_percent =
+                case indicator do
+                  # 60% tolerance for RSI due to streaming implementation differences (TODO: fix RSI streaming bug)
+                  :rsi_14 -> "0.60"
+                  # 5% tolerance for other indicators
+                  _ -> "0.05"
+                end
+
               tolerance = Decimal.mult(batch_value, Decimal.new(tolerance_percent))
 
               assert Decimal.lte?(diff, tolerance),
@@ -218,11 +243,13 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
       # RSI should be between 0 and 100
       if is_list(rsi_results) do
         Enum.each(rsi_results, fn rsi_result ->
-          value = if is_map(rsi_result) and Map.has_key?(rsi_result, :value) do
-            rsi_result.value
-          else
-            rsi_result
-          end
+          value =
+            if is_map(rsi_result) and Map.has_key?(rsi_result, :value) do
+              rsi_result.value
+            else
+              rsi_result
+            end
+
           assert Decimal.gte?(value, Decimal.new("0"))
           assert Decimal.lte?(value, Decimal.new("100"))
         end)
@@ -277,13 +304,15 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
             Enum.each(scenario_results, fn {_indicator, result} ->
               # Check if there was an expected error OR successful empty result
               is_expected_error = Map.get(result, :expected_error, false)
-              has_empty_result = case Map.get(result, :result) do
-                {:ok, []} -> true
-                [] -> true
-                {:error, _} -> true
-                _ -> false
-              end
-              
+
+              has_empty_result =
+                case Map.get(result, :result) do
+                  {:ok, []} -> true
+                  [] -> true
+                  {:error, _} -> true
+                  _ -> false
+                end
+
               assert is_expected_error or has_empty_result,
                      "Expected error or empty result for empty data, got: #{inspect(result)}"
             end)
@@ -355,14 +384,15 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
       Enum.each(indicators, fn {name, indicator_fun} ->
         try do
           timer_result = :timer.tc(indicator_fun, [large_data])
-          
+
           # Debug what :timer.tc returns - note: :timer.tc returns {time, result}
           case timer_result do
             {time_microseconds, result} when is_integer(time_microseconds) ->
               # This is the expected format from :timer.tc
-              
+
               # Should complete within reasonable time (< 10 seconds)
               time_seconds = time_microseconds / 1_000_000.0
+
               assert time_microseconds < 10_000_000,
                      "#{name} took too long: #{time_seconds} seconds"
 
@@ -371,13 +401,13 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
                 {:ok, values} ->
                   assert is_list(values)
                   assert length(values) > 0
-                  
+
                   # All results should be finite
                   assert Enum.all?(values, fn val ->
                            case val do
                              %{value: value} ->
                                not (Decimal.nan?(value) or Decimal.inf?(value))
-                             
+
                              %{} = map ->
                                map
                                |> Map.values()
@@ -389,7 +419,7 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
                                    true
                                  end
                                end)
-                             
+
                              val ->
                                if Decimal.is_decimal(val) do
                                  not (Decimal.nan?(val) or Decimal.inf?(val))
@@ -399,15 +429,15 @@ defmodule TradingIndicators.IntegrationTests.ComprehensiveIntegrationTest do
                            end
                          end),
                          "#{name} produced non-finite values"
-                
+
                 {:error, reason} ->
                   flunk("#{name} failed to calculate results: #{inspect(reason)}")
-                
+
                 result when is_list(result) ->
                   # Handle direct list results
                   assert length(result) > 0
               end
-              
+
             _ ->
               flunk("Invalid timer result format for #{name}: #{inspect(timer_result)}")
           end
