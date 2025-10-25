@@ -398,11 +398,6 @@ defmodule TradingIndicators.Trend.HMA do
     round(sqrt_value)
   end
 
-  defp extract_ohlcv_prices(data, :volume), do: Utils.extract_volumes_as_decimal(data)
-
-  defp extract_single_price(%{} = data_point, :volume),
-    do: Utils.extract_volume_as_decimal(data_point)
-
   defp calculate_hma_values(data, period, source, sqrt_period) do
     half_period = div(period, 2)
 
