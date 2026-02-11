@@ -14,12 +14,15 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
       Enum.reduce(indicators, %{}, fn {name, {module, fun, args}}, acc ->
         try do
           result = apply(module, fun, [data, args])
+
           case result do
-            {:ok, values} -> 
+            {:ok, values} ->
               Map.put(acc, name, %{result: values, success: true})
-            {:error, reason} -> 
+
+            {:error, reason} ->
               Map.put(acc, name, %{error: reason, success: false})
-            _ -> 
+
+            _ ->
               Map.put(acc, name, %{result: result, success: true})
           end
         rescue
@@ -52,6 +55,7 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
             params: args,
             buffer_size: 1000
           }
+
           {:ok, context} = TradingIndicators.Streaming.init_stream(config)
           Map.put(acc, name, %{context: context, success: true})
         rescue
@@ -65,9 +69,9 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
       Enum.reduce(streaming_contexts, %{}, fn {name, ctx_data}, acc ->
         if ctx_data.success do
           try do
-            {:ok, batch_result, updated_context} = 
+            {:ok, batch_result, updated_context} =
               TradingIndicators.Streaming.process_batch(ctx_data.context, initial_data)
-            
+
             Map.put(acc, name, %{
               context: updated_context,
               results: batch_result.values,
@@ -171,6 +175,7 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
         Enum.reduce(indicators, %{}, fn {ind_name, {module, fun, args}}, ind_acc ->
           try do
             result = apply(module, fun, [invalid_data, args])
+
             case result do
               {:ok, _values} ->
                 # If we get here, the indicator didn't raise an error
@@ -179,6 +184,7 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
                   expected_error: false,
                   success: true
                 })
+
               {:error, _reason} ->
                 # Error returned as expected
                 Map.put(ind_acc, ind_name, %{
@@ -186,6 +192,7 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
                   expected_error: true,
                   success: true
                 })
+
               _ ->
                 # Other result format
                 Map.put(ind_acc, ind_name, %{
@@ -236,13 +243,13 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
       # Test with various indicators to see consistency
       # Use smaller periods that work with small datasets (5 data points)
       indicator_tests = %{
-        sma: test_with_indicator(data, TradingIndicators.Trend.SMA, :calculate, [period: 3]),
-        rsi: test_with_indicator(data, TradingIndicators.Momentum.RSI, :calculate, [period: 4]),
+        sma: test_with_indicator(data, TradingIndicators.Trend.SMA, :calculate, period: 3),
+        rsi: test_with_indicator(data, TradingIndicators.Momentum.RSI, :calculate, period: 4),
         bollinger:
-          test_with_indicator(data, TradingIndicators.Volatility.BollingerBands, :calculate, [
+          test_with_indicator(data, TradingIndicators.Volatility.BollingerBands, :calculate,
             period: 4,
             multiplier: Decimal.new("2.0")
-          ])
+          )
       }
 
       Map.put(acc, scenario_name, %{
@@ -426,6 +433,7 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
   defp test_with_indicator(data, module, function, args) do
     try do
       result = apply(module, function, [data, args])
+
       case result do
         {:ok, values} -> %{result: values, success: true, result_length: length(values)}
         {:error, reason} -> %{error: reason, success: false, error_type: :calculation_error}
@@ -440,16 +448,17 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
   defp check_moving_average_consistency(sma_10, sma_20, ema_10) do
     # For trending data, shorter period MA should be more responsive
     # This is a simplified check
-    
+
     # Extract values from result structs for finite check
     sma_10_values = Enum.map(sma_10, fn result -> result.value end)
     sma_20_values = Enum.map(sma_20, fn result -> result.value end)
     ema_10_values = Enum.map(ema_10, fn result -> result.value end)
-    
-    all_finite = TestHelpers.all_finite?(sma_10_values) and
-                 TestHelpers.all_finite?(sma_20_values) and
-                 TestHelpers.all_finite?(ema_10_values)
-    
+
+    all_finite =
+      TestHelpers.all_finite?(sma_10_values) and
+        TestHelpers.all_finite?(sma_20_values) and
+        TestHelpers.all_finite?(ema_10_values)
+
     # Shorter period should have more values
     reasonable_lengths = length(sma_10) >= length(sma_20)
 
@@ -470,7 +479,7 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
 
         # Extract values for finite check
         atr_values = Enum.map(atr, fn result -> result.value end)
-        
+
         # Check if both ATR and band widths are reasonable
         atr_finite = TestHelpers.all_finite?(atr_values)
         bb_finite = TestHelpers.all_finite?(band_widths)
@@ -487,7 +496,7 @@ defmodule TradingIndicators.TestSupport.IntegrationHelpers do
 
         # Extract values for finite check
         atr_values = Enum.map(atr, fn result -> result.value end)
-        
+
         # Check if both ATR and band widths are reasonable
         atr_finite = TestHelpers.all_finite?(atr_values)
         bb_finite = TestHelpers.all_finite?(band_widths)

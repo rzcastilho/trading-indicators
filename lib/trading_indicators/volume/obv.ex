@@ -173,7 +173,8 @@ defmodule TradingIndicators.Volume.OBV do
   def output_fields_metadata do
     %Types.OutputFieldMetadata{
       type: :single_value,
-      description: "On-Balance Volume - cumulative volume indicator tracking buying and selling pressure",
+      description:
+        "On-Balance Volume - cumulative volume indicator tracking buying and selling pressure",
       example: "obv > 1000000",
       unit: "volume"
     }

@@ -17,11 +17,12 @@ defmodule TradingIndicators.PropertyTests.MomentumTest do
         case RSI.calculate(prices, period: period) do
           {:ok, result} ->
             result_values = Enum.map(result, & &1.value)
+
             Enum.each(result_values, fn rsi_value ->
               assert Decimal.gte?(rsi_value, Decimal.new("0"))
               assert Decimal.lte?(rsi_value, Decimal.new("100"))
             end)
-            
+
           {:error, _reason} ->
             # Skip test if insufficient data - this is expected behavior
             :ok
@@ -96,6 +97,7 @@ defmodule TradingIndicators.PropertyTests.MomentumTest do
 
         unless Enum.empty?(result) do
           result_values = Enum.map(result, & &1.value)
+
           avg_rsi =
             result_values
             |> Enum.map(&Decimal.to_float/1)
@@ -124,11 +126,11 @@ defmodule TradingIndicators.PropertyTests.MomentumTest do
           Enum.each(result, fn stoch_result ->
             k_value = stoch_result.value.k
             d_value = stoch_result.value.d
-            
+
             # Check %K values
             assert Decimal.gte?(k_value, Decimal.new("0"))
             assert Decimal.lte?(k_value, Decimal.new("100"))
-            
+
             # Check %D values (may be nil if insufficient data)
             if d_value != nil do
               assert Decimal.gte?(d_value, Decimal.new("0"))
@@ -150,8 +152,8 @@ defmodule TradingIndicators.PropertyTests.MomentumTest do
         # Extract K and D values from the result structure
         unless Enum.empty?(result) do
           k_values = Enum.map(result, fn item -> item.value.k end)
-          d_values = Enum.map(result, fn item -> item.value.d end) |> Enum.filter(& &1 != nil)
-          
+          d_values = Enum.map(result, fn item -> item.value.d end) |> Enum.filter(&(&1 != nil))
+
           # Only test volatility if we have enough data points
           if length(k_values) > 2 and length(d_values) > 2 do
             # %D should generally be less volatile than %K
@@ -260,6 +262,7 @@ defmodule TradingIndicators.PropertyTests.MomentumTest do
         {:ok, result} = WilliamsR.calculate(data, period: period)
 
         result_values = Enum.map(result, & &1.value)
+
         Enum.each(result_values, fn wr_value ->
           assert Decimal.gte?(wr_value, Decimal.new("-100"))
           assert Decimal.lte?(wr_value, Decimal.new("0"))

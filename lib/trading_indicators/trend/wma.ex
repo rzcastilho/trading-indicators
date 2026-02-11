@@ -213,7 +213,8 @@ defmodule TradingIndicators.Trend.WMA do
   def output_fields_metadata do
     %Types.OutputFieldMetadata{
       type: :single_value,
-      description: "Weighted Moving Average - moving average with linearly increasing weights for recent prices",
+      description:
+        "Weighted Moving Average - moving average with linearly increasing weights for recent prices",
       example: "wma_20 > close",
       unit: "price"
     }

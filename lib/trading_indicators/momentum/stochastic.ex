@@ -286,7 +286,12 @@ defmodule TradingIndicators.Momentum.Stochastic do
       type: :multi_value,
       fields: [
         %{name: :k, type: :decimal, description: "%K line - fast stochastic oscillator", unit: "%"},
-        %{name: :d, type: :decimal, description: "%D line - slow stochastic (smoothed %K)", unit: "%"}
+        %{
+          name: :d,
+          type: :decimal,
+          description: "%D line - slow stochastic (smoothed %K)",
+          unit: "%"
+        }
       ],
       description: "Stochastic Oscillator with %K and %D lines",
       example: "stochastic_14.k > stochastic_14.d and stochastic_14.k < 20"
