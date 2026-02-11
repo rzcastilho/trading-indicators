@@ -626,7 +626,8 @@ defmodule TradingIndicators.Types do
             type: :single_value | :multi_value,
             fields: [field_info()] | nil,
             description: String.t() | nil,
-            example: String.t() | nil
+            example: String.t() | nil,
+            unit: String.t() | nil
           }
   end
 
