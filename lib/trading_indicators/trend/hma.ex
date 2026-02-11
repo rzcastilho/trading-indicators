@@ -211,6 +211,30 @@ defmodule TradingIndicators.Trend.HMA do
   end
 
   @doc """
+  Returns metadata describing the output fields for HMA.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Trend.HMA.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Hull Moving Average - fast and smooth moving average reducing lag",
+      example: "hma_9 > close",
+      unit: "price"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time HMA calculation.
 
   ## Parameters

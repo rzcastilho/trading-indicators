@@ -214,6 +214,30 @@ defmodule TradingIndicators.Volatility.VolatilityIndex do
   end
 
   @doc """
+  Returns metadata describing the output fields for Volatility Index.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Volatility.VolatilityIndex.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Volatility Index - annualized volatility measure based on standard deviation",
+      example: "volatility_index_20 > 25.0",
+      unit: "price"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time Volatility Index calculation.
 
   ## Parameters

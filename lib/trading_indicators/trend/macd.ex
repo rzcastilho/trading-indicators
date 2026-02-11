@@ -241,6 +241,49 @@ defmodule TradingIndicators.Trend.MACD do
   end
 
   @doc """
+  Returns metadata describing the output fields for MACD.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Trend.MACD.output_fields_metadata()
+      iex> metadata.type
+      :multi_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :multi_value,
+      fields: [
+        %{
+          name: :macd,
+          type: :decimal,
+          description: "MACD line (Fast EMA - Slow EMA)",
+          unit: "price"
+        },
+        %{
+          name: :signal,
+          type: :decimal,
+          description: "Signal line (EMA of MACD line)",
+          unit: "price"
+        },
+        %{
+          name: :histogram,
+          type: :decimal,
+          description: "MACD histogram (MACD - Signal)",
+          unit: "price"
+        }
+      ],
+      description: "MACD with MACD line, signal line, and histogram",
+      example: "macd_1.histogram > 0 and macd_1.macd > macd_1.signal"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time MACD calculation.
 
   ## Parameters

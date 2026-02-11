@@ -147,6 +147,30 @@ defmodule TradingIndicators.Trend.KAMA do
     ]
   end
 
+  @doc """
+  Returns metadata describing the output fields for KAMA.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Trend.KAMA.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Kaufman's Adaptive Moving Average - self-adjusting moving average based on market volatility",
+      example: "kama_10 > close",
+      unit: "price"
+    }
+  end
+
   @impl true
   def init_state(opts \\ []) do
     period = Keyword.get(opts, :period, @default_period)

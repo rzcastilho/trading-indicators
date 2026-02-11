@@ -248,6 +248,30 @@ defmodule TradingIndicators.Trend.EMA do
   end
 
   @doc """
+  Returns metadata describing the output fields for EMA.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Trend.EMA.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Exponential Moving Average - weighted moving average giving more weight to recent prices",
+      example: "ema_12 > ema_26",
+      unit: "price"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time EMA calculation.
 
   ## Parameters

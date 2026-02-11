@@ -573,4 +573,63 @@ defmodule TradingIndicators.Types do
   end
 
   @type param_metadata :: ParamMetadata.t()
+
+  defmodule OutputFieldMetadata do
+    @moduledoc """
+    Struct representing output field metadata for trading indicators.
+
+    Describes the fields available in an indicator's output, enabling
+    users to discover what values they can reference in strategy conditions.
+
+    ## Examples
+
+    Single-value indicators (SMA, RSI):
+        %OutputFieldMetadata{
+          type: :single_value,
+          description: "Simple Moving Average value",
+          unit: "price"
+        }
+
+        %OutputFieldMetadata{
+          type: :single_value,
+          description: "RSI value ranging from 0-100",
+          unit: "%"
+        }
+
+    Multi-value indicators (Bollinger Bands, MACD):
+        %OutputFieldMetadata{
+          type: :multi_value,
+          fields: [
+            %{name: :upper_band, type: :decimal, description: "Upper band (SMA + 2×std)", unit: "price"},
+            %{name: :middle_band, type: :decimal, description: "Middle band (SMA)", unit: "price"},
+            %{name: :lower_band, type: :decimal, description: "Lower band (SMA - 2×std)", unit: "price"}
+          ]
+        }
+    """
+    @enforce_keys [:type]
+    defstruct [
+      :type,
+      :fields,
+      :description,
+      :example,
+      :unit
+    ]
+
+    @type field_info :: %{
+            name: atom(),
+            type: :decimal | :integer | :map,
+            description: String.t() | nil,
+            unit: String.t() | nil
+          }
+
+    @type t :: %__MODULE__{
+            type: :single_value | :multi_value,
+            fields: [field_info()] | nil,
+            description: String.t() | nil,
+            example: String.t() | nil,
+            unit: String.t() | nil
+          }
+  end
+
+  @type output_field_metadata :: OutputFieldMetadata.t()
 end

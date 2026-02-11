@@ -398,4 +398,24 @@ defmodule TradingIndicators.Trend.WMATest do
       assert Decimal.equal?(Enum.at(results, 1).value, Decimal.new("105.0"))
     end
   end
+
+  describe "output_fields_metadata/0" do
+    test "returns correct metadata for single-value indicator" do
+      metadata = WMA.output_fields_metadata()
+
+      assert metadata.type == :single_value
+      assert is_binary(metadata.description)
+      assert is_binary(metadata.example)
+      assert metadata.fields == nil
+    end
+
+    test "metadata has all required fields" do
+      metadata = WMA.output_fields_metadata()
+
+      assert Map.has_key?(metadata, :type)
+      assert Map.has_key?(metadata, :description)
+      assert Map.has_key?(metadata, :example)
+      assert Map.has_key?(metadata, :fields)
+    end
+  end
 end

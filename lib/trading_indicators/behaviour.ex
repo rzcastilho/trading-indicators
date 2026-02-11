@@ -125,6 +125,70 @@ defmodule TradingIndicators.Behaviour do
   @callback parameter_metadata() :: [Types.param_metadata()]
 
   @doc """
+  Returns metadata describing the output fields produced by the indicator.
+
+  This callback provides information about what values are available in the
+  indicator's output, enabling:
+
+  - Strategy builders to show available fields in autocomplete
+  - Documentation generation for indicator outputs
+  - Validation of field references in strategy conditions
+  - UI construction (field selectors, condition builders)
+
+  ## Returns
+
+  - `Types.output_field_metadata()` - Metadata struct describing output structure
+
+  ## Single-Value Indicators
+
+  Indicators that return a single numeric value (SMA, RSI, EMA, etc.):
+
+      def output_fields_metadata do
+        %Types.OutputFieldMetadata{
+          type: :single_value,
+          description: "Simple Moving Average value",
+          example: "sma_20 > close",
+          unit: "price"
+        }
+      end
+
+  ## Multi-Value Indicators
+
+  Indicators that return a map with multiple fields (Bollinger Bands, MACD, etc.):
+
+      def output_fields_metadata do
+        %Types.OutputFieldMetadata{
+          type: :multi_value,
+          fields: [
+            %{name: :upper_band, type: :decimal, description: "Upper band (SMA + 2×std)", unit: "price"},
+            %{name: :middle_band, type: :decimal, description: "Middle band (SMA)", unit: "price"},
+            %{name: :lower_band, type: :decimal, description: "Lower band (SMA - 2×std)", unit: "price"},
+            %{name: :percent_b, type: :decimal, description: "%B indicator", unit: "%"},
+            %{name: :bandwidth, type: :decimal, description: "Bandwidth indicator", unit: "%"}
+          ],
+          description: "Bollinger Bands with upper, middle, and lower bands",
+          example: "close > bb_20.upper_band or close < bb_20.lower_band"
+        }
+      end
+
+  ## Example Notation
+
+  The `example` field demonstrates how to reference indicator values in strategy conditions.
+  Examples use a naming convention with suffixes indicating configuration:
+
+  - **Numeric suffix** (e.g., `sma_20`, `rsi_14`) represents the primary period parameter
+  - **Field accessor** (e.g., `macd_1.histogram`, `bb_20.upper_band`) accesses specific fields in multi-value indicators
+  - **Comparison with price** (e.g., `sma_20 > close`) shows typical usage patterns
+
+  Common patterns:
+  - `sma_20 > close` - SMA with 20-period compared to current close price
+  - `rsi_14 > 70` - RSI with 14-period compared to overbought threshold
+  - `macd_1.histogram > 0` - MACD histogram (default periods) positive crossover
+  - `bb_20.upper_band` - Upper band of 20-period Bollinger Bands
+  """
+  @callback output_fields_metadata() :: Types.output_field_metadata()
+
+  @doc """
   Initializes the streaming state for the indicator.
 
   This callback is optional and only needed for indicators that support

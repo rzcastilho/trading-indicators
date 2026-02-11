@@ -157,6 +157,30 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
   end
 
   @doc """
+  Returns metadata describing the output fields for Accumulation/Distribution Line.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Volume.AccumulationDistribution.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Accumulation/Distribution Line - volume indicator tracking cumulative money flow",
+      example: "ad_line > 0",
+      unit: "volume"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time A/D Line calculation.
 
   ## Parameters

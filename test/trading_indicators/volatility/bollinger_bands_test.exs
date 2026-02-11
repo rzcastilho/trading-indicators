@@ -514,4 +514,30 @@ defmodule TradingIndicators.Volatility.BollingerBandsTest do
       end)
     end
   end
+
+  describe "output_fields_metadata/0" do
+    test "returns correct metadata for multi-value indicator" do
+      metadata = BollingerBands.output_fields_metadata()
+
+      assert metadata.type == :multi_value
+      assert is_list(metadata.fields)
+      assert length(metadata.fields) > 0
+
+      # Verify each field has required attributes
+      for field <- metadata.fields do
+        assert is_atom(field.name)
+        assert field.type in [:decimal, :integer, :map]
+        assert is_binary(field.description)
+      end
+    end
+
+    test "metadata has all required fields" do
+      metadata = BollingerBands.output_fields_metadata()
+
+      assert Map.has_key?(metadata, :type)
+      assert Map.has_key?(metadata, :fields)
+      assert Map.has_key?(metadata, :description)
+      assert Map.has_key?(metadata, :example)
+    end
+  end
 end

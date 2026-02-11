@@ -196,6 +196,30 @@ defmodule TradingIndicators.Trend.WMA do
   end
 
   @doc """
+  Returns metadata describing the output fields for WMA.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Trend.WMA.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Weighted Moving Average - moving average with linearly increasing weights for recent prices",
+      example: "wma_20 > close",
+      unit: "price"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time WMA calculation.
 
   ## Parameters

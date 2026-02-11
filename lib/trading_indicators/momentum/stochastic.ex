@@ -267,6 +267,33 @@ defmodule TradingIndicators.Momentum.Stochastic do
   end
 
   @doc """
+  Returns metadata describing the output fields for Stochastic.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Momentum.Stochastic.output_fields_metadata()
+      iex> metadata.type
+      :multi_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :multi_value,
+      fields: [
+        %{name: :k, type: :decimal, description: "%K line - fast stochastic oscillator", unit: "%"},
+        %{name: :d, type: :decimal, description: "%D line - slow stochastic (smoothed %K)", unit: "%"}
+      ],
+      description: "Stochastic Oscillator with %K and %D lines",
+      example: "stochastic_14.k > stochastic_14.d and stochastic_14.k < 20"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time Stochastic calculation.
 
   ## Parameters
