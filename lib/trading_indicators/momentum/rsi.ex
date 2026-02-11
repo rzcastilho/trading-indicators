@@ -284,7 +284,8 @@ defmodule TradingIndicators.Momentum.RSI do
   def output_fields_metadata do
     %Types.OutputFieldMetadata{
       type: :single_value,
-      description: "Relative Strength Index - momentum oscillator measuring speed and magnitude of price changes",
+      description:
+        "Relative Strength Index - momentum oscillator measuring speed and magnitude of price changes",
       example: "rsi_14 > 70 or rsi_14 < 30",
       unit: "%"
     }

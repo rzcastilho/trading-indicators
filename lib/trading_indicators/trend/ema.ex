@@ -265,7 +265,8 @@ defmodule TradingIndicators.Trend.EMA do
   def output_fields_metadata do
     %Types.OutputFieldMetadata{
       type: :single_value,
-      description: "Exponential Moving Average - weighted moving average giving more weight to recent prices",
+      description:
+        "Exponential Moving Average - weighted moving average giving more weight to recent prices",
       example: "ema_12 > ema_26",
       unit: "price"
     }

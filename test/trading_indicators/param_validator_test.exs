@@ -309,7 +309,8 @@ defmodule TradingIndicators.ParamValidatorTest do
 
       # Valid parameters
       assert :ok =
-               ParamValidator.validate_params([period: 20, multiplier: 2.0, source: :close],
+               ParamValidator.validate_params(
+                 [period: 20, multiplier: 2.0, source: :close],
                  metadata
                )
 
@@ -336,7 +337,8 @@ defmodule TradingIndicators.ParamValidatorTest do
       metadata = VWAP.parameter_metadata()
 
       # Valid parameters
-      assert :ok = ParamValidator.validate_params([variant: :close, session_reset: :daily], metadata)
+      assert :ok =
+               ParamValidator.validate_params([variant: :close, session_reset: :daily], metadata)
 
       # Invalid variant
       assert {:error, %Errors.InvalidParams{param: :variant}} =
