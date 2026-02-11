@@ -250,7 +250,8 @@ defmodule TradingIndicators.Momentum.WilliamsR do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Williams %R - momentum indicator measuring overbought/oversold levels",
-      example: "williams_r_14 < -80 or williams_r_14 > -20"
+      example: "williams_r_14 < -80 or williams_r_14 > -20",
+      unit: "%"
     }
   end
 

@@ -247,7 +247,8 @@ defmodule TradingIndicators.Momentum.ROC do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Rate of Change - momentum indicator measuring percentage price change over time",
-      example: "roc_12 > 0"
+      example: "roc_12 > 0",
+      unit: "%"
     }
   end
 

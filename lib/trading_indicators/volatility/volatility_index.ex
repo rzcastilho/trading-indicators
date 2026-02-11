@@ -232,7 +232,8 @@ defmodule TradingIndicators.Volatility.VolatilityIndex do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Volatility Index - annualized volatility measure based on standard deviation",
-      example: "volatility_index_20 > 25.0"
+      example: "volatility_index_20 > 25.0",
+      unit: "price"
     }
   end
 

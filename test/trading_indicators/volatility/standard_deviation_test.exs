@@ -364,4 +364,24 @@ defmodule TradingIndicators.Volatility.StandardDeviationTest do
       assert Decimal.eq?(Decimal.round(ratio, 3), Decimal.round(expected_ratio, 3))
     end
   end
+
+  describe "output_fields_metadata/0" do
+    test "returns correct metadata for single-value indicator" do
+      metadata = StandardDeviation.output_fields_metadata()
+
+      assert metadata.type == :single_value
+      assert is_binary(metadata.description)
+      assert is_binary(metadata.example)
+      assert metadata.fields == nil
+    end
+
+    test "metadata has all required fields" do
+      metadata = StandardDeviation.output_fields_metadata()
+
+      assert Map.has_key?(metadata, :type)
+      assert Map.has_key?(metadata, :description)
+      assert Map.has_key?(metadata, :example)
+      assert Map.has_key?(metadata, :fields)
+    end
+  end
 end

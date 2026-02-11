@@ -225,7 +225,8 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Standard Deviation - statistical measure of price volatility",
-      example: "std_dev_20 > 1.5"
+      example: "std_dev_20 > 1.5",
+      unit: "price"
     }
   end
 

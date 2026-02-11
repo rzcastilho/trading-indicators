@@ -229,7 +229,8 @@ defmodule TradingIndicators.Trend.HMA do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Hull Moving Average - fast and smooth moving average reducing lag",
-      example: "hma_9 > close"
+      example: "hma_9 > close",
+      unit: "price"
     }
   end
 

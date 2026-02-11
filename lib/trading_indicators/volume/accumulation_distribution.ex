@@ -175,7 +175,8 @@ defmodule TradingIndicators.Volume.AccumulationDistribution do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Accumulation/Distribution Line - volume indicator tracking cumulative money flow",
-      example: "ad_line > 0"
+      example: "ad_line > 0",
+      unit: "volume"
     }
   end
 

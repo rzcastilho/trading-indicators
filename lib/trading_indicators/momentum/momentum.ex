@@ -261,7 +261,8 @@ defmodule TradingIndicators.Momentum.Momentum do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Momentum - measures the rate of price change over time",
-      example: "momentum_10 > 0"
+      example: "momentum_10 > 0",
+      unit: "price"
     }
   end
 

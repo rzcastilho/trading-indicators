@@ -240,7 +240,8 @@ defmodule TradingIndicators.Trend.SMA do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Simple Moving Average - arithmetic mean of prices over a period",
-      example: "sma_20 > close"
+      example: "sma_20 > close",
+      unit: "price"
     }
   end
 

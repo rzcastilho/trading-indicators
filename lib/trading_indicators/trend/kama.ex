@@ -166,7 +166,8 @@ defmodule TradingIndicators.Trend.KAMA do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Kaufman's Adaptive Moving Average - self-adjusting moving average based on market volatility",
-      example: "kama_10 > close"
+      example: "kama_10 > close",
+      unit: "price"
     }
   end
 

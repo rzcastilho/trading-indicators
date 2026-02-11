@@ -207,7 +207,8 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Chaikin Money Flow - volume-weighted indicator measuring buying and selling pressure",
-      example: "cmf_20 > 0.05 or cmf_20 < -0.05"
+      example: "cmf_20 > 0.05 or cmf_20 < -0.05",
+      unit: "%"
     }
   end
 

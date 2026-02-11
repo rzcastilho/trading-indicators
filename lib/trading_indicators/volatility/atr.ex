@@ -207,7 +207,8 @@ defmodule TradingIndicators.Volatility.ATR do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Average True Range - volatility indicator measuring market volatility",
-      example: "atr_14 > 2.0"
+      example: "atr_14 > 2.0",
+      unit: "price"
     }
   end
 

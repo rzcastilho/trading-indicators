@@ -458,4 +458,59 @@ defmodule TradingIndicators.Trend.MACDTest do
       end)
     end
   end
+
+  describe "output_fields_metadata/0" do
+    test "returns correct metadata for multi-value indicator" do
+      metadata = MACD.output_fields_metadata()
+
+      assert metadata.type == :multi_value
+      assert is_list(metadata.fields)
+      assert length(metadata.fields) == 3
+
+      field_names = Enum.map(metadata.fields, & &1.name)
+      assert :macd in field_names
+      assert :signal in field_names
+      assert :histogram in field_names
+
+      # Verify each field has required attributes
+      for field <- metadata.fields do
+        assert is_atom(field.name)
+        assert field.type in [:decimal, :integer, :map]
+        assert is_binary(field.description)
+      end
+    end
+
+    test "field metadata matches actual calculation output structure" do
+      # Generate test data
+      data =
+        for i <- 0..35 do
+          base_price = 100 + :math.sin(i * 0.1) * 10
+
+          %{
+            close: Decimal.new(to_string(base_price)),
+            timestamp: DateTime.add(~U[2024-01-01 09:30:00Z], i, :minute)
+          }
+        end
+
+      {:ok, [result | _]} = MACD.calculate(data)
+
+      metadata = MACD.output_fields_metadata()
+      field_names = Enum.map(metadata.fields, & &1.name)
+
+      # Verify result.value has all documented fields
+      assert Map.has_key?(result.value, :macd)
+      assert Map.has_key?(result.value, :signal)
+      assert Map.has_key?(result.value, :histogram)
+      assert MapSet.new(Map.keys(result.value)) == MapSet.new(field_names)
+    end
+
+    test "metadata has all required fields" do
+      metadata = MACD.output_fields_metadata()
+
+      assert Map.has_key?(metadata, :type)
+      assert Map.has_key?(metadata, :fields)
+      assert Map.has_key?(metadata, :description)
+      assert Map.has_key?(metadata, :example)
+    end
+  end
 end

@@ -147,7 +147,8 @@ defmodule TradingIndicators.Behaviour do
         %Types.OutputFieldMetadata{
           type: :single_value,
           description: "Simple Moving Average value",
-          example: "sma_20 > close"
+          example: "sma_20 > close",
+          unit: "price"
         }
       end
 
@@ -159,9 +160,9 @@ defmodule TradingIndicators.Behaviour do
         %Types.OutputFieldMetadata{
           type: :multi_value,
           fields: [
-            %{name: :upper_band, type: :decimal, description: "Upper band (SMA + 2×std)"},
-            %{name: :middle_band, type: :decimal, description: "Middle band (SMA)"},
-            %{name: :lower_band, type: :decimal, description: "Lower band (SMA - 2×std)"},
+            %{name: :upper_band, type: :decimal, description: "Upper band (SMA + 2×std)", unit: "price"},
+            %{name: :middle_band, type: :decimal, description: "Middle band (SMA)", unit: "price"},
+            %{name: :lower_band, type: :decimal, description: "Lower band (SMA - 2×std)", unit: "price"},
             %{name: :percent_b, type: :decimal, description: "%B indicator", unit: "%"},
             %{name: :bandwidth, type: :decimal, description: "Bandwidth indicator", unit: "%"}
           ],
@@ -169,6 +170,21 @@ defmodule TradingIndicators.Behaviour do
           example: "close > bb_20.upper_band or close < bb_20.lower_band"
         }
       end
+
+  ## Example Notation
+
+  The `example` field demonstrates how to reference indicator values in strategy conditions.
+  Examples use a naming convention with suffixes indicating configuration:
+
+  - **Numeric suffix** (e.g., `sma_20`, `rsi_14`) represents the primary period parameter
+  - **Field accessor** (e.g., `macd_1.histogram`, `bb_20.upper_band`) accesses specific fields in multi-value indicators
+  - **Comparison with price** (e.g., `sma_20 > close`) shows typical usage patterns
+
+  Common patterns:
+  - `sma_20 > close` - SMA with 20-period compared to current close price
+  - `rsi_14 > 70` - RSI with 14-period compared to overbought threshold
+  - `macd_1.histogram > 0` - MACD histogram (default periods) positive crossover
+  - `bb_20.upper_band` - Upper band of 20-period Bollinger Bands
   """
   @callback output_fields_metadata() :: Types.output_field_metadata()
 

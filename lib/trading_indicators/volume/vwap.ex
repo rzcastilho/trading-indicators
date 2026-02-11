@@ -237,7 +237,8 @@ defmodule TradingIndicators.Volume.VWAP do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Volume Weighted Average Price - average price weighted by volume",
-      example: "close > vwap"
+      example: "close > vwap",
+      unit: "price"
     }
   end
 

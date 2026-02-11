@@ -236,7 +236,8 @@ defmodule TradingIndicators.Momentum.CCI do
     %Types.OutputFieldMetadata{
       type: :single_value,
       description: "Commodity Channel Index - momentum oscillator identifying cyclical trends",
-      example: "cci_20 > 100 or cci_20 < -100"
+      example: "cci_20 > 100 or cci_20 < -100",
+      unit: "%"
     }
   end
 

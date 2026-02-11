@@ -586,16 +586,23 @@ defmodule TradingIndicators.Types do
     Single-value indicators (SMA, RSI):
         %OutputFieldMetadata{
           type: :single_value,
-          description: "Simple Moving Average value"
+          description: "Simple Moving Average value",
+          unit: "price"
+        }
+
+        %OutputFieldMetadata{
+          type: :single_value,
+          description: "RSI value ranging from 0-100",
+          unit: "%"
         }
 
     Multi-value indicators (Bollinger Bands, MACD):
         %OutputFieldMetadata{
           type: :multi_value,
           fields: [
-            %{name: :upper_band, type: :decimal, description: "Upper band (SMA + 2×std)"},
-            %{name: :middle_band, type: :decimal, description: "Middle band (SMA)"},
-            %{name: :lower_band, type: :decimal, description: "Lower band (SMA - 2×std)"}
+            %{name: :upper_band, type: :decimal, description: "Upper band (SMA + 2×std)", unit: "price"},
+            %{name: :middle_band, type: :decimal, description: "Middle band (SMA)", unit: "price"},
+            %{name: :lower_band, type: :decimal, description: "Lower band (SMA - 2×std)", unit: "price"}
           ]
         }
     """
@@ -604,7 +611,8 @@ defmodule TradingIndicators.Types do
       :type,
       :fields,
       :description,
-      :example
+      :example,
+      :unit
     ]
 
     @type field_info :: %{
