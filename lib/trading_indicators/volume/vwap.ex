@@ -219,6 +219,29 @@ defmodule TradingIndicators.Volume.VWAP do
   end
 
   @doc """
+  Returns metadata describing the output fields for VWAP.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Volume.VWAP.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Volume Weighted Average Price - average price weighted by volume",
+      example: "close > vwap"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time VWAP calculation.
 
   ## Parameters

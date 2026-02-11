@@ -228,6 +228,61 @@ defmodule TradingIndicators.Volatility.BollingerBands do
   end
 
   @doc """
+  Returns metadata describing the output fields for Bollinger Bands.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Volatility.BollingerBands.output_fields_metadata()
+      iex> metadata.type
+      :multi_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :multi_value,
+      fields: [
+        %{
+          name: :upper_band,
+          type: :decimal,
+          description: "Upper Bollinger Band (SMA + multiplier × standard deviation)",
+          unit: "price"
+        },
+        %{
+          name: :middle_band,
+          type: :decimal,
+          description: "Middle Bollinger Band (Simple Moving Average)",
+          unit: "price"
+        },
+        %{
+          name: :lower_band,
+          type: :decimal,
+          description: "Lower Bollinger Band (SMA - multiplier × standard deviation)",
+          unit: "price"
+        },
+        %{
+          name: :percent_b,
+          type: :decimal,
+          description: "%B indicator - price position relative to bands",
+          unit: "%"
+        },
+        %{
+          name: :bandwidth,
+          type: :decimal,
+          description: "Bandwidth - distance between upper and lower bands",
+          unit: "%"
+        }
+      ],
+      description: "Bollinger Bands with upper, middle, and lower bands plus %B and bandwidth",
+      example: "close > bb_20.upper_band or close < bb_20.lower_band"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time Bollinger Bands calculation.
 
   ## Parameters

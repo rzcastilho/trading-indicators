@@ -229,6 +229,29 @@ defmodule TradingIndicators.Momentum.ROC do
   end
 
   @doc """
+  Returns metadata describing the output fields for ROC.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Momentum.ROC.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Rate of Change - momentum indicator measuring percentage price change over time",
+      example: "roc_12 > 0"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time ROC calculation.
 
   ## Parameters

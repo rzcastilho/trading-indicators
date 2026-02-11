@@ -207,6 +207,29 @@ defmodule TradingIndicators.Volatility.StandardDeviation do
   end
 
   @doc """
+  Returns metadata describing the output fields for Standard Deviation.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Volatility.StandardDeviation.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Standard Deviation - statistical measure of price volatility",
+      example: "std_dev_20 > 1.5"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time Standard Deviation calculation.
 
   ## Parameters

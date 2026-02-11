@@ -243,6 +243,29 @@ defmodule TradingIndicators.Momentum.Momentum do
   end
 
   @doc """
+  Returns metadata describing the output fields for Momentum.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Momentum.Momentum.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Momentum - measures the rate of price change over time",
+      example: "momentum_10 > 0"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time Momentum calculation.
 
   ## Parameters

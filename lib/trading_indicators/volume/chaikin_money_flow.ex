@@ -189,6 +189,29 @@ defmodule TradingIndicators.Volume.ChaikinMoneyFlow do
   end
 
   @doc """
+  Returns metadata describing the output fields for Chaikin Money Flow.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Volume.ChaikinMoneyFlow.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Chaikin Money Flow - volume-weighted indicator measuring buying and selling pressure",
+      example: "cmf_20 > 0.05 or cmf_20 < -0.05"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time CMF calculation.
 
   ## Parameters

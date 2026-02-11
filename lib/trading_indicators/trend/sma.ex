@@ -222,6 +222,29 @@ defmodule TradingIndicators.Trend.SMA do
   end
 
   @doc """
+  Returns metadata describing the output fields for SMA.
+
+  ## Returns
+
+  - Output field metadata struct
+
+  ## Example
+
+      iex> metadata = TradingIndicators.Trend.SMA.output_fields_metadata()
+      iex> metadata.type
+      :single_value
+  """
+  @impl true
+  @spec output_fields_metadata() :: Types.output_field_metadata()
+  def output_fields_metadata do
+    %Types.OutputFieldMetadata{
+      type: :single_value,
+      description: "Simple Moving Average - arithmetic mean of prices over a period",
+      example: "sma_20 > close"
+    }
+  end
+
+  @doc """
   Initializes streaming state for real-time SMA calculation.
 
   ## Parameters
