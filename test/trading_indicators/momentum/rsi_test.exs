@@ -43,6 +43,51 @@ defmodule TradingIndicators.Momentum.RSITest do
       assert metadata.signal in [:overbought, :oversold, :neutral]
     end
 
+    # Worked RSI(14) example published by StockCharts, with Wilder's smoothing.
+    @wilder_closes ~w(44.3389 44.0902 44.1497 43.6124 44.2779 44.8264 45.0955 45.4245 45.8433
+                      46.0826 45.8931 46.0328 45.6140 46.2820 46.2820 46.0028 46.0328 46.4116
+                      46.2222 45.6439 46.2122 46.2521 45.7137 46.4515 45.7835 45.3548 44.0288
+                      44.1783 44.2181 44.5672 43.4205 42.6628 43.1314)
+    @wilder_rsi ~w(70.53 66.32 66.55 69.41 66.36 57.97 62.93 63.26 56.06 62.38 54.71 50.42
+                   39.99 41.46 41.87 45.46 37.30 33.08 37.77)
+
+    defp wilder_data do
+      @wilder_closes
+      |> Enum.with_index()
+      |> Enum.map(fn {close, i} ->
+        %{close: Decimal.new(close), timestamp: DateTime.add(~U[2024-01-01 09:30:00Z], i * 60)}
+      end)
+    end
+
+    defp rounded(values), do: Enum.map(values, &Decimal.to_string(Decimal.round(&1, 2)))
+
+    test "matches the published Wilder RSI(14) values" do
+      {:ok, results} = RSI.calculate(wilder_data(), period: 14)
+
+      assert results |> Enum.map(& &1.value) |> rounded() == @wilder_rsi
+    end
+
+    test "Wilder smoothing uses the latest change, not a lagged window" do
+      {:ok, results} = RSI.calculate(wilder_data(), period: 14)
+      values = Enum.map(results, & &1.value)
+
+      # a window lagging `period` changes behind repeats the first value
+      assert values |> Enum.chunk_every(2, 1, :discard) |> Enum.all?(fn [a, b] -> a != b end)
+    end
+
+    test "batch and streaming give the same values" do
+      data = wilder_data()
+      {:ok, batch} = RSI.calculate(data, period: 14)
+
+      {_state, streamed} =
+        Enum.reduce(data, {RSI.init_state(period: 14), []}, fn point, {state, acc} ->
+          {:ok, state, result} = RSI.update_state(state, point)
+          {state, if(result, do: [result.value | acc], else: acc)}
+        end)
+
+      assert Enum.reverse(streamed) == Enum.map(batch, & &1.value)
+    end
+
     test "calculates RSI with custom parameters" do
       data = create_test_data(20)
 

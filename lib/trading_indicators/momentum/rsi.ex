@@ -565,46 +565,39 @@ defmodule TradingIndicators.Momentum.RSI do
     {gains, losses}
   end
 
-  defp calculate_rsi_series(gains, losses, period, smoothing) do
-    gain_windows = Utils.sliding_window(gains, period)
-    loss_windows = Utils.sliding_window(losses, period)
-
-    Enum.zip(gain_windows, loss_windows)
-    |> Enum.with_index()
-    |> Enum.map(fn {{gain_window, loss_window}, index} ->
-      if index == 0 do
-        # First calculation - use simple average
-        avg_gain = Utils.mean(gain_window)
-        avg_loss = Utils.mean(loss_window)
-        calculate_rsi_value(avg_gain, avg_loss)
-      else
-        # Subsequent calculations - use smoothing method
-        case smoothing do
-          :wilder ->
-            calculate_wilder_rsi(gains, losses, period, index)
-
-          :sma ->
-            avg_gain = Utils.mean(gain_window)
-            avg_loss = Utils.mean(loss_window)
-            calculate_rsi_value(avg_gain, avg_loss)
-        end
-      end
+  defp calculate_rsi_series(gains, losses, period, :sma) do
+    Enum.zip(Utils.sliding_window(gains, period), Utils.sliding_window(losses, period))
+    |> Enum.map(fn {gain_window, loss_window} ->
+      calculate_rsi_value(Utils.mean(gain_window), Utils.mean(loss_window))
     end)
   end
 
-  defp calculate_wilder_rsi(gains, losses, period, index) do
-    # For Wilder's method, we need to calculate smoothed averages
-    # This is a simplified version - for proper Wilder's smoothing,
-    # we'd need to track running averages
-    start_idx = max(0, index + 1 - period)
+  defp calculate_rsi_series(gains, _losses, period, :wilder) when length(gains) < period, do: []
 
-    recent_gains = Enum.slice(gains, start_idx, period)
-    recent_losses = Enum.slice(losses, start_idx, period)
+  defp calculate_rsi_series(gains, losses, period, :wilder) do
+    # The first averages are the simple means of the first `period` changes; every later
+    # change is smoothed into the previous averages:
+    # ((previous_avg * (n - 1)) + current_value) / n, the same arithmetic as `update_state/2`.
+    {first_gains, rest_gains} = Enum.split(gains, period)
+    {first_losses, rest_losses} = Enum.split(losses, period)
+    first = {Utils.mean(first_gains), Utils.mean(first_losses)}
 
-    avg_gain = Utils.mean(recent_gains)
-    avg_loss = Utils.mean(recent_losses)
+    period_decimal = Decimal.new(period)
+    period_minus_one = Decimal.sub(period_decimal, Decimal.new("1"))
 
-    calculate_rsi_value(avg_gain, avg_loss)
+    smooth = fn previous, current ->
+      previous
+      |> Decimal.mult(period_minus_one)
+      |> Decimal.add(current)
+      |> Decimal.div(period_decimal)
+    end
+
+    Enum.zip(rest_gains, rest_losses)
+    |> Enum.scan(first, fn {gain, loss}, {avg_gain, avg_loss} ->
+      {smooth.(avg_gain, gain), smooth.(avg_loss, loss)}
+    end)
+    |> then(&[first | &1])
+    |> Enum.map(fn {avg_gain, avg_loss} -> calculate_rsi_value(avg_gain, avg_loss) end)
   end
 
   defp calculate_rsi_value(avg_gain, avg_loss) do
